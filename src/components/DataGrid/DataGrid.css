@@ -1,0 +1,229 @@
+.pdg {
+  --pdg-bg: #ffffff;
+  --pdg-header-bg: #f8fafc;
+  --pdg-border: #e2e8f0;
+  --pdg-text: #0f172a;
+  --pdg-muted: #64748b;
+  --pdg-hover: #f1f5f9;
+  --pdg-striped: #f8fafc;
+  --pdg-selected: #dbeafe;
+  --pdg-selected-hover: #bfdbfe;
+  --pdg-accent: #2563eb;
+  --pdg-radius: 10px;
+
+  color: var(--pdg-text);
+  font-family: inherit;
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.pdg__scroll {
+  overflow: auto;
+  border: 1px solid var(--pdg-border);
+  border-radius: var(--pdg-radius);
+  background: var(--pdg-bg);
+}
+
+.pdg__table {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--pdg-bg);
+}
+
+.pdg__caption {
+  padding: 10px 14px;
+  text-align: left;
+  color: var(--pdg-muted);
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.pdg__header {
+  position: relative;
+  padding: 10px 14px;
+  background: var(--pdg-header-bg);
+  border-bottom: 1px solid var(--pdg-border);
+  color: var(--pdg-muted);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-align: left;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.pdg__drag-handle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 6px;
+  color: var(--pdg-muted);
+  font-size: 13px;
+  line-height: 1;
+  cursor: grab;
+  user-select: none;
+}
+
+.pdg__drag-handle:hover {
+  color: var(--pdg-accent);
+}
+
+.pdg__drag-handle:active {
+  cursor: grabbing;
+}
+
+.pdg__drag-handle:focus-visible {
+  outline: 2px solid var(--pdg-accent);
+  outline-offset: 2px;
+  border-radius: 3px;
+}
+
+.pdg__header--dragging {
+  opacity: 0.5;
+}
+
+.pdg__header--drag-over {
+  background: var(--pdg-hover);
+  box-shadow: inset 2px 0 0 var(--pdg-accent);
+}
+
+.pdg__sort-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  cursor: pointer;
+}
+
+.pdg__sort-button:focus-visible {
+  outline: 2px solid var(--pdg-accent);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+.pdg__sort-icon {
+  color: var(--pdg-accent);
+  font-size: 10px;
+}
+
+.pdg__table--resizable {
+  table-layout: fixed;
+}
+
+.pdg__table--resizable .pdg__cell {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pdg__resize-handle {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 8px;
+  cursor: col-resize;
+  touch-action: none;
+}
+
+.pdg__resize-handle::after {
+  content: '';
+  position: absolute;
+  top: 20%;
+  bottom: 20%;
+  left: 50%;
+  width: 2px;
+  background: transparent;
+  border-radius: 2px;
+  transform: translateX(-50%);
+  transition: background-color 120ms ease;
+}
+
+.pdg__resize-handle:hover::after,
+.pdg__resize-handle:focus-visible::after {
+  background: var(--pdg-accent);
+}
+
+.pdg__resize-handle:focus-visible {
+  outline: none;
+}
+
+body.pdg--resizing {
+  cursor: col-resize;
+  user-select: none;
+}
+
+.pdg__cell {
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--pdg-border);
+  text-align: left;
+  vertical-align: middle;
+}
+
+.pdg__row:last-child .pdg__cell {
+  border-bottom: 0;
+}
+
+.pdg--striped .pdg__row:nth-child(even) .pdg__cell {
+  background: var(--pdg-striped);
+}
+
+.pdg__row:hover .pdg__cell {
+  background: var(--pdg-hover);
+}
+
+.pdg__row--selected .pdg__cell,
+.pdg--striped .pdg__row--selected:nth-child(even) .pdg__cell {
+  background: var(--pdg-selected);
+}
+
+.pdg__row--selected:hover .pdg__cell {
+  background: var(--pdg-selected-hover);
+}
+
+.pdg--clickable .pdg__row {
+  cursor: pointer;
+}
+
+.pdg__row:focus-visible {
+  outline: 2px solid var(--pdg-accent);
+  outline-offset: -2px;
+}
+
+.pdg__col-select,
+.pdg__select-cell {
+  width: 44px;
+}
+
+.pdg__select-cell {
+  padding-right: 4px;
+  padding-left: 12px;
+  text-align: center;
+}
+
+.pdg__checkbox {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  accent-color: var(--pdg-accent);
+  cursor: pointer;
+  vertical-align: middle;
+}
+
+.pdg__checkbox:focus-visible {
+  outline: 2px solid var(--pdg-accent);
+  outline-offset: 2px;
+}
+
+.pdg__empty {
+  padding: 32px 14px;
+  color: var(--pdg-muted);
+  text-align: center;
+}
