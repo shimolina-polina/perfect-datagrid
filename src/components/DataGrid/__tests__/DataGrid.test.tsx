@@ -426,4 +426,167 @@ describe('DataGrid', () => {
 
     expect(screen.getByText('Nothing here')).toBeInTheDocument();
   });
+
+  it('applies default sort, filters, column order and pins', () => {
+    render(
+      <DataGrid
+        rows={rows}
+        columns={columns}
+        getRowId={(row) => row.id}
+        filterableColumns
+        defaultSort={{ columnId: 'score', direction: 'desc' }}
+        defaultFilters={{ name: 'a' }}
+        defaultColumnOrder={['score', 'name']}
+        defaultColumnPins={{ score: 'left' }}
+      />,
+    );
+
+    const headers = within(screen.getAllByRole('row')[0]).getAllByRole('columnheader');
+    expect(
+      headers.map((header) => header.querySelector('.pdg__sort-button > span')?.textContent),
+    ).toEqual(['Score', 'Name']);
+    expect(headers[0]).toHaveClass('pdg__header--pinned-left');
+    expect(screen.getByRole('searchbox', { name: 'Filter name column' })).toHaveValue('a');
+    expect(dataValues(0)).toEqual(['30', '20', '10']);
+  });
+
+  it('supports controlled sorting', () => {
+    const onSortChange = vi.fn();
+    const { rerender } = render(
+      <DataGrid
+        rows={rows}
+        columns={columns}
+        getRowId={(row) => row.id}
+        sort={{ columnId: 'score', direction: 'desc' }}
+        onSortChange={onSortChange}
+      />,
+    );
+
+    expect(bodyValues(1)).toEqual(['30', '20', '10']);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Score' }));
+    expect(onSortChange).toHaveBeenLastCalledWith(null);
+    expect(bodyValues(1)).toEqual(['30', '20', '10']);
+
+    rerender(
+      <DataGrid
+        rows={rows}
+        columns={columns}
+        getRowId={(row) => row.id}
+        sort={{ columnId: 'score', direction: 'asc' }}
+        onSortChange={onSortChange}
+      />,
+    );
+
+    expect(bodyValues(1)).toEqual(['10', '20', '30']);
+  });
+
+  it('supports controlled filters', () => {
+    const onFiltersChange = vi.fn();
+    const { rerender } = render(
+      <DataGrid
+        rows={rows}
+        columns={columns}
+        getRowId={(row) => row.id}
+        filterableColumns
+        filters={{ name: 'alp' }}
+        onFiltersChange={onFiltersChange}
+      />,
+    );
+
+    expect(dataValues(0)).toEqual(['Alpha']);
+
+    fireEvent.change(screen.getByRole('searchbox', { name: 'Filter name column' }), {
+      target: { value: 'gam' },
+    });
+    expect(onFiltersChange).toHaveBeenLastCalledWith({ name: 'gam' });
+    expect(dataValues(0)).toEqual(['Alpha']);
+
+    rerender(
+      <DataGrid
+        rows={rows}
+        columns={columns}
+        getRowId={(row) => row.id}
+        filterableColumns
+        filters={{ name: 'gam' }}
+        onFiltersChange={onFiltersChange}
+      />,
+    );
+
+    expect(dataValues(0)).toEqual(['Gamma']);
+  });
+
+  it('supports controlled column order', () => {
+    const onColumnOrderChange = vi.fn();
+    const { rerender } = render(
+      <DataGrid
+        rows={rows}
+        columns={columns}
+        getRowId={(row) => row.id}
+        reorderableColumns
+        columnOrder={['score', 'name']}
+        onColumnOrderChange={onColumnOrderChange}
+      />,
+    );
+
+    expect(rowCells(0)).toEqual(['20', 'Beta']);
+
+    fireEvent.keyDown(screen.getByRole('button', { name: 'Reorder score column' }), {
+      key: 'ArrowRight',
+    });
+    expect(onColumnOrderChange).toHaveBeenLastCalledWith(['name', 'score']);
+    expect(rowCells(0)).toEqual(['20', 'Beta']);
+
+    rerender(
+      <DataGrid
+        rows={rows}
+        columns={columns}
+        getRowId={(row) => row.id}
+        reorderableColumns
+        columnOrder={['name', 'score']}
+        onColumnOrderChange={onColumnOrderChange}
+      />,
+    );
+
+    expect(rowCells(0)).toEqual(['Beta', '20']);
+  });
+
+  it('supports controlled column pins', () => {
+    const onColumnPinsChange = vi.fn();
+    const { rerender } = render(
+      <DataGrid
+        rows={rows}
+        columns={columns}
+        getRowId={(row) => row.id}
+        columnPins={{ score: 'left' }}
+        onColumnPinsChange={onColumnPinsChange}
+      />,
+    );
+
+    let headers = screen.getAllByRole('columnheader');
+    expect(headers[0]).toHaveTextContent('Score');
+    expect(headers[0]).toHaveClass('pdg__header--pinned-left');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Column menu for score' }));
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Unpin column' }));
+
+    expect(onColumnPinsChange).toHaveBeenLastCalledWith({ score: null });
+    headers = screen.getAllByRole('columnheader');
+    expect(headers[0]).toHaveTextContent('Score');
+    expect(headers[0]).toHaveClass('pdg__header--pinned-left');
+
+    rerender(
+      <DataGrid
+        rows={rows}
+        columns={columns}
+        getRowId={(row) => row.id}
+        columnPins={{ score: null }}
+        onColumnPinsChange={onColumnPinsChange}
+      />,
+    );
+
+    headers = screen.getAllByRole('columnheader');
+    expect(headers[0]).toHaveTextContent('Name');
+    expect(headers[0]).not.toHaveClass('pdg__header--pinned-left');
+  });
 });

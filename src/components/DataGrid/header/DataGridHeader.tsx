@@ -14,7 +14,7 @@ interface DataGridHeaderProps<T> {
   resizableColumns: boolean;
   reorderableColumns: boolean;
   filterableColumns: boolean;
-  filters: Record<string, string>;
+  filters: Readonly<Record<string, string>>;
   minColumnWidth: number;
   draggedColumnId: string | null;
   dragOverColumnId: string | null;

@@ -3,6 +3,7 @@ import { DataGridBody } from './body/DataGridBody';
 import { DataGridHeader } from './header/DataGridHeader';
 import type {
   ColumnPin,
+  ColumnPins,
   DataGridColumn,
   DataGridProps,
   PinnedOffsets,
@@ -31,20 +32,43 @@ export function DataGrid<T>({
   minColumnWidth = 80,
   reorderableColumns = false,
   filterableColumns = false,
+  sort: controlledSort,
+  defaultSort,
+  onSortChange,
+  filters: controlledFilters,
+  defaultFilters,
+  onFiltersChange,
+  columnOrder: controlledColumnOrder,
+  defaultColumnOrder,
+  onColumnOrderChange,
+  columnPins: controlledColumnPins,
+  defaultColumnPins,
+  onColumnPinsChange,
 }: DataGridProps<T>) {
   const captionId = useId();
-  const [sort, setSort] = useState<SortState | null>(null);
-  const [filters, setFilters] = useState<Record<string, string>>({});
+  const [internalSort, setInternalSort] = useState<SortState | null>(() => defaultSort ?? null);
+  const [internalFilters, setInternalFilters] = useState<Record<string, string>>(() => ({
+    ...(defaultFilters ?? {}),
+  }));
   const [internalSelectedIds, setInternalSelectedIds] = useState<ReadonlyArray<RowId>>(
     () => defaultSelectedRowIds ?? [],
   );
   const [columnWidths, setColumnWidths] = useState<Record<string, number>>({});
-  const [columnOrder, setColumnOrder] = useState<ReadonlyArray<string>>(() =>
-    columns.map((column) => column.id),
+  const [internalColumnOrder, setInternalColumnOrder] = useState<ReadonlyArray<string>>(() =>
+    defaultColumnOrder ? [...defaultColumnOrder] : columns.map((column) => column.id),
   );
-  const [pinOverrides, setPinOverrides] = useState<Record<string, ColumnPin | null>>({});
+  const [internalColumnPins, setInternalColumnPins] = useState<
+    Record<string, ColumnPin | null>
+  >(() => ({ ...(defaultColumnPins ?? {}) }));
   const [draggedColumnId, setDraggedColumnId] = useState<string | null>(null);
   const [dragOverColumnId, setDragOverColumnId] = useState<string | null>(null);
+
+  const sort = controlledSort !== undefined ? controlledSort : internalSort;
+  const filters = controlledFilters !== undefined ? controlledFilters : internalFilters;
+  const columnOrder =
+    controlledColumnOrder !== undefined ? controlledColumnOrder : internalColumnOrder;
+  const pinOverrides =
+    controlledColumnPins !== undefined ? controlledColumnPins : internalColumnPins;
 
   const orderedColumns = useMemo(() => {
     const byId = new Map(columns.map((column) => [column.id, column] as const));
@@ -251,9 +275,13 @@ export function DataGrid<T>({
       if (!source || !target || source.pin !== target.pin) return;
 
       const ids = displayColumns.map((column) => column.id);
-      setColumnOrder(moveItem(ids, ids.indexOf(sourceId), ids.indexOf(targetId)));
+      const nextOrder = moveItem(ids, ids.indexOf(sourceId), ids.indexOf(targetId));
+      if (controlledColumnOrder === undefined) {
+        setInternalColumnOrder(nextOrder);
+      }
+      onColumnOrderChange?.(nextOrder);
     },
-    [displayColumns],
+    [controlledColumnOrder, displayColumns, onColumnOrderChange],
   );
 
   const moveColumnBy = useCallback(
@@ -264,9 +292,13 @@ export function DataGrid<T>({
       if (from < 0 || !source || !target || source.pin !== target.pin) return;
 
       const ids = displayColumns.map((column) => column.id);
-      setColumnOrder(moveItem(ids, from, from + offset));
+      const nextOrder = moveItem(ids, from, from + offset);
+      if (controlledColumnOrder === undefined) {
+        setInternalColumnOrder(nextOrder);
+      }
+      onColumnOrderChange?.(nextOrder);
     },
-    [displayColumns],
+    [controlledColumnOrder, displayColumns, onColumnOrderChange],
   );
 
   const toggleColumnPin = useCallback(
@@ -274,12 +306,14 @@ export function DataGrid<T>({
       const column = columns.find((item) => item.id === columnId);
       if (!column) return;
 
-      setPinOverrides((current) => {
-        const currentPin = columnId in current ? current[columnId] : column.pin;
-        return { ...current, [columnId]: currentPin ? null : 'left' };
-      });
+      const currentPin = columnId in pinOverrides ? pinOverrides[columnId] : column.pin;
+      const nextPins: ColumnPins = { ...pinOverrides, [columnId]: currentPin ? null : 'left' };
+      if (controlledColumnPins === undefined) {
+        setInternalColumnPins(nextPins);
+      }
+      onColumnPinsChange?.(nextPins);
     },
-    [columns],
+    [columns, controlledColumnPins, onColumnPinsChange, pinOverrides],
   );
 
   const handleColumnDragStart = useCallback((columnId: string) => {
@@ -313,29 +347,37 @@ export function DataGrid<T>({
   const toggleSort = (column: DataGridColumn<T>) => {
     if (!column.sortAccessor) return;
 
-    setSort((current) => {
-      if (current?.columnId !== column.id) {
-        return { columnId: column.id, direction: 'asc' };
-      }
-      if (current.direction === 'asc') {
-        return { columnId: column.id, direction: 'desc' };
-      }
-      return null;
-    });
+    const nextSort: SortState | null =
+      sort?.columnId !== column.id
+        ? { columnId: column.id, direction: 'asc' }
+        : sort.direction === 'asc'
+          ? { columnId: column.id, direction: 'desc' }
+          : null;
+
+    if (controlledSort === undefined) {
+      setInternalSort(nextSort);
+    }
+    onSortChange?.(nextSort);
   };
 
-  const updateFilter = useCallback((columnId: string, value: string) => {
-    setFilters((current) => {
+  const updateFilter = useCallback(
+    (columnId: string, value: string) => {
+      if ((filters[columnId] ?? '') === value) return;
+
+      const nextFilters = { ...filters };
       if (value === '') {
-        if (!(columnId in current)) return current;
-        const next = { ...current };
-        delete next[columnId];
-        return next;
+        delete nextFilters[columnId];
+      } else {
+        nextFilters[columnId] = value;
       }
 
-      return current[columnId] === value ? current : { ...current, [columnId]: value };
-    });
-  }, []);
+      if (controlledFilters === undefined) {
+        setInternalFilters(nextFilters);
+      }
+      onFiltersChange?.(nextFilters);
+    },
+    [controlledFilters, filters, onFiltersChange],
+  );
 
   const rootClassName = ['pdg', striped && 'pdg--striped', onRowClick && 'pdg--clickable', className]
     .filter(Boolean)
