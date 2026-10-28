@@ -1,9 +1,25 @@
 {
   "name": "perfect-datagrid",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "A lightweight, accessible data grid component for React.",
   "type": "module",
   "license": "MIT",
+  "author": {
+    "name": "shimolina-polina",
+    "email": "polya@shimolina.ru",
+    "url": "https://github.com/shimolina-polina"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/shimolina-polina/perfect-datagrid.git"
+  },
+  "homepage": "https://github.com/shimolina-polina/perfect-datagrid#readme",
+  "bugs": {
+    "url": "https://github.com/shimolina-polina/perfect-datagrid/issues"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
   "files": [
     "dist"
   ],
