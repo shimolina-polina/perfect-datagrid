@@ -47,7 +47,7 @@
 .pdg__header {
   position: relative;
   z-index: 2;
-  padding: 10px 14px;
+  padding: 10px 38px 10px 14px;
   background: var(--pdg-header-bg);
   border-bottom: 1px solid var(--pdg-border);
   color: var(--pdg-muted);
@@ -71,6 +71,70 @@
 
 .pdg__header--pinned-right-edge {
   box-shadow: inset 1px 0 0 var(--pdg-border);
+}
+
+.pdg__menu {
+  position: absolute;
+  top: calc(50% - 11px);
+  right: 10px;
+}
+
+.pdg__menu-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--pdg-muted);
+  font: inherit;
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.pdg__menu-button:hover {
+  background: var(--pdg-hover);
+  color: var(--pdg-text);
+}
+
+.pdg__menu-button:focus-visible {
+  outline: 2px solid var(--pdg-accent);
+  outline-offset: 1px;
+}
+
+.pdg__menu-dropdown {
+  position: fixed;
+  z-index: 1000;
+  min-width: 180px;
+  padding: 4px;
+  border: 1px solid var(--pdg-border);
+  border-radius: 8px;
+  background: var(--pdg-bg);
+  box-shadow: 0 8px 24px rgb(15 23 42 / 12%);
+}
+
+.pdg__menu-item {
+  display: block;
+  width: 100%;
+  padding: 8px 10px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--pdg-text);
+  font: inherit;
+  text-align: left;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.pdg__menu-item:hover,
+.pdg__menu-item:focus-visible {
+  background: var(--pdg-hover);
+  outline: none;
 }
 
 .pdg__drag-handle {
