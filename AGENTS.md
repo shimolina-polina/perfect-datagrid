@@ -46,30 +46,57 @@ npm run typecheck && npm run lint && npm test && npm run build
 
 ## Structure
 
+Файлы группируются по ответственности, а не по типу. Корень компонента содержит только точку входа, композицию, публичные типы и стили; всё остальное разложено по подпапкам.
+
 ```text
-src/index.ts                         публичный API пакета
-src/components/DataGrid/
-  DataGrid.tsx                       состояние и композиция
-  DataGridHeader.tsx                 thead, сортировка, чекбокс "выбрать все"
-  DataGridBody.tsx                   tbody и empty state
-  DataGridRow.tsx                    строка, ячейки, выбор
-  SelectionCheckbox.tsx              чекбокс с indeterminate
-  ColumnResizeHandle.tsx             ресайз колонки (pointer + клавиатура)
-  ColumnDragHandle.tsx               drag-and-drop колонки + клавиатура
-  ColumnMenu.tsx                     меню колонки (закрепить/открепить)
-  useMeasuredColumnWidths.ts         измерение ширин для закреплённых колонок
-  types.ts                           публичные типы
-  utils.ts                           чистые функции (сортировка, moveItem)
-  DataGrid.css                       все стили компонента
-  index.ts                           экспорт компонента и типов
-src/demo/                            playground
+src/
+  index.ts                            публичный API пакета
+  components/
+    DataGrid/
+      index.ts                        экспорт компонента и типов
+      DataGrid.tsx                    состояние и композиция
+      types.ts                        публичные типы
+      DataGrid.css                    все стили компонента
+      header/                         всё, что рендерится в thead
+        DataGridHeader.tsx
+        ColumnDragHandle.tsx
+        ColumnMenu.tsx
+        ColumnResizeHandle.tsx
+      body/                           всё, что рендерится в tbody
+        DataGridBody.tsx
+        DataGridRow.tsx
+      shared/                         переиспользуемые UI-примитивы
+        SelectionCheckbox.tsx
+      hooks/                          stateful React-логика без JSX
+        useMeasuredColumnWidths.ts
+      lib/                            чистые функции без React
+        utils.ts
+      __tests__/
+        DataGrid.test.tsx
+  demo/
+    main.tsx
+    demo.css
 ```
+
+### Placement Rules
+
+- В корне `components/DataGrid/` живут только `index.ts`, `DataGrid.tsx`, `types.ts` и `DataGrid.css`. Новые компоненты, хуки и утилиты сюда не добавлять.
+- `header/` — компоненты и обработчики, которые рендерятся только внутри `<thead>`.
+- `body/` — компоненты строк, ячеек и empty state для `<tbody>`.
+- `shared/` — самостоятельные UI-примитивы, используемые минимум в двух областях (`header` и `body`). Если компонент нужен только одному разделу, он остаётся в этом разделе.
+- `hooks/` — хуки с состоянием или эффектами. Файлы называются `use*.ts` и не содержат JSX.
+- `lib/` — чистые функции без React, DOM и побочных эффектов. Имена файлов в camelCase.
+- `__tests__/` — тесты публичного поведения компонента. Внутренние файлы не тестируются напрямую, если это не чистая функция из `lib/`.
+- Компоненты называются в PascalCase, папки — в нижнем регистре, кроме `__tests__`.
+- Импорты идут только вниз по зависимостям: `DataGrid.tsx` → `header` / `body` / `hooks` / `lib`; `header` и `body` → `shared` / `lib` / `types`; `shared` и `lib` не импортируют `header` или `body`. Циклические импорты запрещены.
+- Новый файл кладётся по ответственности. Если не подходит ни одна папка, сначала обсуждается новая категория, а не добавление файла в корень.
 
 ## Architecture Rules
 
-- `DataGrid.tsx` — единственное место, где хранится состояние: сортировка, выбор, ширины и порядок колонок.
+- `DataGrid.tsx` — единственное место, где хранится состояние: сортировка, фильтры, выбор, ширины, порядок колонок и переопределения закрепления.
 - Дочерние компоненты должны оставаться презентационными: получать данные и коллбэки через props.
-- Новые типы — в `types.ts`; чистые функции — в `utils.ts`.
+- Новые типы — в `types.ts`; чистые функции — в `lib/utils.ts`.
+- `shared/` не знает о конкретных разделах `header` и `body`; зависимости направлены только от разделов к `shared`.
 - Публичный API менять только через `src/index.ts` и `src/components/DataGrid/index.ts`.
 - Стили держать в одном `DataGrid.css`, классы с префиксом `pdg`, цвета через CSS-переменные `--pdg-*`.
 - `react`, `react-dom`, `react/jsx-runtime` должны оставаться external в `vite.config.ts`.
@@ -90,7 +117,7 @@ src/demo/                            playground
 
 ## Testing
 
-- Тесты: `src/components/DataGrid/DataGrid.test.tsx`.
+- Тесты: `src/components/DataGrid/__tests__/DataGrid.test.tsx`.
 - `vitest.setup.ts` подключает jest-dom и `cleanup` после каждого теста.
 - Использовать role-based queries (`getByRole`, `getByLabelText`).
 - Хелперы: `bodyValues(columnIndex)` — значения колонки по всем строкам; `rowCells(rowIndex)` — ячейки одной строки.

@@ -1,7 +1,7 @@
 import { fireEvent, render, screen, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
-import { DataGrid } from './DataGrid';
-import type { DataGridColumn } from './types';
+import { DataGrid } from '../DataGrid';
+import type { DataGridColumn } from '../types';
 
 interface Row {
   id: number;

@@ -1,6 +1,6 @@
 import { useCallback, useId, useMemo, useState } from 'react';
-import { DataGridBody } from './DataGridBody';
-import { DataGridHeader } from './DataGridHeader';
+import { DataGridBody } from './body/DataGridBody';
+import { DataGridHeader } from './header/DataGridHeader';
 import type {
   ColumnPin,
   DataGridColumn,
@@ -9,8 +9,8 @@ import type {
   RowId,
   SortState,
 } from './types';
-import { useMeasuredColumnWidths } from './useMeasuredColumnWidths';
-import { compareValues, matchesFilter, moveItem, SELECTION_COLUMN_ID } from './utils';
+import { useMeasuredColumnWidths } from './hooks/useMeasuredColumnWidths';
+import { compareValues, matchesFilter, moveItem, SELECTION_COLUMN_ID } from './lib/utils';
 import './DataGrid.css';
 
 export function DataGrid<T>({

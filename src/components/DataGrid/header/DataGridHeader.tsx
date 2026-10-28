@@ -1,9 +1,9 @@
 import { ColumnDragHandle } from './ColumnDragHandle';
 import { ColumnMenu } from './ColumnMenu';
 import { ColumnResizeHandle } from './ColumnResizeHandle';
-import { SelectionCheckbox } from './SelectionCheckbox';
-import type { DataGridColumn, PinnedOffsets, SelectionMode, SortState } from './types';
-import { SELECTION_COLUMN_ID } from './utils';
+import { SelectionCheckbox } from '../shared/SelectionCheckbox';
+import type { DataGridColumn, PinnedOffsets, SelectionMode, SortState } from '../types';
+import { SELECTION_COLUMN_ID } from '../lib/utils';
 
 interface DataGridHeaderProps<T> {
   columns: ReadonlyArray<DataGridColumn<T>>;
