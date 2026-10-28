@@ -56,6 +56,7 @@ src/components/DataGrid/
   SelectionCheckbox.tsx              чекбокс с indeterminate
   ColumnResizeHandle.tsx             ресайз колонки (pointer + клавиатура)
   ColumnDragHandle.tsx               drag-and-drop колонки + клавиатура
+  ColumnMenu.tsx                     меню колонки (закрепить/открепить)
   useMeasuredColumnWidths.ts         измерение ширин для закреплённых колонок
   types.ts                           публичные типы
   utils.ts                           чистые функции (сортировка, moveItem)
@@ -84,7 +85,7 @@ src/demo/                            playground
   - Row id берётся из `getRowId(row, index)`, иначе это индекс. При сортировке индекс меняется, поэтому для стабильного выбора нужен `getRowId`.
 - Ресайз: `resizableColumns`, `minColumnWidth`, `column.resizable: false` отключает колонку. Ширины хранятся по `column.id`, применяются через `<colgroup>`; при ресайзе таблица переходит на `table-layout: fixed`.
 - Перестановка: `reorderableColumns`. Порядок хранится по id и объединяется с актуальным списком `columns` (новые колонки добавляются в конец). Работает drag-and-drop и стрелки на хвате. Перестановка разрешена только внутри группы с одинаковым `pin`.
-- Закрепление: `column.pin: 'left' | 'right'`. Колонки группируются по краям (`left`, обычные, `right`), смещения считаются из фактических ширин через `ResizeObserver` с fallback на числовой `column.width`. При `selectionMode: 'multiple'` колонка выбора тоже закреплена слева.
+- Закрепление: `column.pin: 'left' | 'right'`. Колонки группируются по краям (`left`, обычные, `right`), смещения считаются из фактических ширин через `ResizeObserver` с fallback на числовой `column.width`. При `selectionMode: 'multiple'` колонка выбора тоже закреплена слева. Меню колонки позволяет закрепить её слева или открепить; переопределения хранятся в `DataGrid`.
 
 ## Testing
 

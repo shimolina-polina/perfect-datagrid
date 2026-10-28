@@ -2,6 +2,7 @@ import { useCallback, useId, useMemo, useState } from 'react';
 import { DataGridBody } from './DataGridBody';
 import { DataGridHeader } from './DataGridHeader';
 import type {
+  ColumnPin,
   DataGridColumn,
   DataGridProps,
   PinnedOffsets,
@@ -39,6 +40,7 @@ export function DataGrid<T>({
   const [columnOrder, setColumnOrder] = useState<ReadonlyArray<string>>(() =>
     columns.map((column) => column.id),
   );
+  const [pinOverrides, setPinOverrides] = useState<Record<string, ColumnPin | null>>({});
   const [draggedColumnId, setDraggedColumnId] = useState<string | null>(null);
   const [dragOverColumnId, setDragOverColumnId] = useState<string | null>(null);
 
@@ -60,17 +62,21 @@ export function DataGrid<T>({
     const right: DataGridColumn<T>[] = [];
 
     orderedColumns.forEach((column) => {
-      if (column.pin === 'left') {
-        left.push(column);
-      } else if (column.pin === 'right') {
-        right.push(column);
+      const pin = column.id in pinOverrides ? pinOverrides[column.id] : column.pin;
+      const resolvedColumn =
+        pin === column.pin ? column : { ...column, pin: pin ?? undefined };
+
+      if (pin === 'left') {
+        left.push(resolvedColumn);
+      } else if (pin === 'right') {
+        right.push(resolvedColumn);
       } else {
-        center.push(column);
+        center.push(resolvedColumn);
       }
     });
 
     return [...left, ...center, ...right];
-  }, [orderedColumns]);
+  }, [orderedColumns, pinOverrides]);
 
   const hasPinnedColumns = useMemo(
     () => displayColumns.some((column) => column.pin !== undefined),
@@ -241,6 +247,19 @@ export function DataGrid<T>({
     [displayColumns],
   );
 
+  const toggleColumnPin = useCallback(
+    (columnId: string) => {
+      const column = columns.find((item) => item.id === columnId);
+      if (!column) return;
+
+      setPinOverrides((current) => {
+        const currentPin = columnId in current ? current[columnId] : column.pin;
+        return { ...current, [columnId]: currentPin ? null : 'left' };
+      });
+    },
+    [columns],
+  );
+
   const handleColumnDragStart = useCallback((columnId: string) => {
     setDraggedColumnId(columnId);
   }, []);
@@ -333,6 +352,7 @@ export function DataGrid<T>({
               onColumnDragLeave={handleColumnDragLeave}
               onColumnDrop={handleColumnDrop}
               onMoveColumn={moveColumnBy}
+              onTogglePin={toggleColumnPin}
             />
             <DataGridBody
               rows={sortedRows}

@@ -43,7 +43,7 @@ describe('DataGrid', () => {
   it('sorts rows ascending and descending on repeated header clicks', () => {
     render(<DataGrid rows={rows} columns={columns} getRowId={(row) => row.id} />);
 
-    const scoreButton = screen.getByRole('button', { name: /score/i });
+    const scoreButton = screen.getByRole('button', { name: 'Score' });
 
     fireEvent.click(scoreButton);
     expect(bodyValues(1)).toEqual(['10', '20', '30']);
@@ -269,6 +269,25 @@ describe('DataGrid', () => {
     const selectAll = screen.getByRole('checkbox', { name: 'Select all rows' });
     expect(selectAll.closest('th')).toHaveClass('pdg__header--pinned-left');
     expect(screen.getByRole('columnheader', { name: 'Name' }).style.left).toBe('44px');
+  });
+
+  it('pins and unpins a column from its menu', () => {
+    render(<DataGrid rows={rows} columns={columns} getRowId={(row) => row.id} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Column menu for score' }));
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Pin column' }));
+
+    let headers = screen.getAllByRole('columnheader');
+    expect(headers[0]).toHaveTextContent('Score');
+    expect(headers[0]).toHaveClass('pdg__header--pinned-left');
+    expect(screen.getByText('20').closest('td')).toHaveClass('pdg__cell--pinned-left');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Column menu for score' }));
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Unpin column' }));
+
+    headers = screen.getAllByRole('columnheader');
+    expect(headers[0]).toHaveTextContent('Name');
+    expect(headers[0]).not.toHaveClass('pdg__header--pinned-left');
   });
 
   it('renders the empty message when there are no rows', () => {

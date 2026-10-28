@@ -1,4 +1,5 @@
 import { ColumnDragHandle } from './ColumnDragHandle';
+import { ColumnMenu } from './ColumnMenu';
 import { ColumnResizeHandle } from './ColumnResizeHandle';
 import { SelectionCheckbox } from './SelectionCheckbox';
 import type { DataGridColumn, PinnedOffsets, SelectionMode, SortState } from './types';
@@ -26,6 +27,7 @@ interface DataGridHeaderProps<T> {
   onColumnDragLeave: (columnId: string) => void;
   onColumnDrop: (columnId: string) => void;
   onMoveColumn: (columnId: string, offset: number) => void;
+  onTogglePin: (columnId: string) => void;
 }
 
 export function DataGridHeader<T>({
@@ -50,6 +52,7 @@ export function DataGridHeader<T>({
   onColumnDragLeave,
   onColumnDrop,
   onMoveColumn,
+  onTogglePin,
 }: DataGridHeaderProps<T>) {
   return (
     <thead>
@@ -161,6 +164,11 @@ export function DataGridHeader<T>({
               ) : (
                 column.header
               )}
+              <ColumnMenu
+                columnId={column.id}
+                pinned={Boolean(column.pin)}
+                onTogglePin={onTogglePin}
+              />
               {isResizable ? (
                 <ColumnResizeHandle
                   columnId={column.id}
