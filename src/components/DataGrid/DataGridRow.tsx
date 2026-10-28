@@ -1,5 +1,5 @@
 import { SelectionCheckbox } from './SelectionCheckbox';
-import type { DataGridColumn, SelectionMode } from './types';
+import type { DataGridColumn, PinnedOffsets, SelectionMode } from './types';
 
 interface DataGridRowProps<T> {
   row: T;
@@ -7,6 +7,7 @@ interface DataGridRowProps<T> {
   columns: ReadonlyArray<DataGridColumn<T>>;
   selected: boolean;
   selectionMode: SelectionMode;
+  columnOffsets: PinnedOffsets;
   onToggleSelect: (row: T, index: number) => void;
   onRowClick?: (row: T, index: number) => void;
 }
@@ -17,6 +18,7 @@ export function DataGridRow<T>({
   columns,
   selected,
   selectionMode,
+  columnOffsets,
   onToggleSelect,
   onRowClick,
 }: DataGridRowProps<T>) {
@@ -49,7 +51,10 @@ export function DataGridRow<T>({
       }
     >
       {selectionMode === 'multiple' ? (
-        <td className="pdg__cell pdg__select-cell">
+        <td
+          className="pdg__cell pdg__select-cell pdg__cell--pinned pdg__cell--pinned-left"
+          style={{ left: 0 }}
+        >
           <SelectionCheckbox
             checked={selected}
             label={`Select row ${rowIndex + 1}`}
@@ -57,11 +62,32 @@ export function DataGridRow<T>({
           />
         </td>
       ) : null}
-      {columns.map((column) => (
-        <td key={column.id} className="pdg__cell" style={{ textAlign: column.align }}>
-          {column.accessor(row)}
-        </td>
-      ))}
+      {columns.map((column) => {
+        const pinOffset = columnOffsets[column.id];
+        const cellClassName = [
+          'pdg__cell',
+          column.pin && 'pdg__cell--pinned',
+          column.pin && `pdg__cell--pinned-${column.pin}`,
+          column.pin && pinOffset?.edge && `pdg__cell--pinned-${column.pin}-edge`,
+        ]
+          .filter(Boolean)
+          .join(' ');
+        const pinStyle = pinOffset
+          ? pinOffset.side === 'left'
+            ? { left: pinOffset.value }
+            : { right: pinOffset.value }
+          : undefined;
+
+        return (
+          <td
+            key={column.id}
+            className={cellClassName}
+            style={{ textAlign: column.align, ...pinStyle }}
+          >
+            {column.accessor(row)}
+          </td>
+        );
+      })}
     </tr>
   );
 }

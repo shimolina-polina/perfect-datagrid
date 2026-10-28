@@ -3,6 +3,7 @@ import type { ReactNode } from 'react';
 export type SortDirection = 'asc' | 'desc';
 export type SelectionMode = 'none' | 'single' | 'multiple';
 export type RowId = string | number;
+export type ColumnPin = 'left' | 'right';
 
 export interface DataGridColumn<T> {
   id: string;
@@ -12,6 +13,7 @@ export interface DataGridColumn<T> {
   width?: number | string;
   align?: 'left' | 'center' | 'right';
   resizable?: boolean;
+  pin?: ColumnPin;
 }
 
 export interface DataGridProps<T> {
@@ -37,3 +39,12 @@ export interface SortState {
   columnId: string;
   direction: SortDirection;
 }
+
+export interface PinnedOffset {
+  side: ColumnPin;
+  value: number;
+  edge: boolean;
+}
+
+export type PinnedOffsets = Record<string, PinnedOffset>;
+

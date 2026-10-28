@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { DataGridRow } from './DataGridRow';
-import type { DataGridColumn, SelectionMode } from './types';
+import type { DataGridColumn, PinnedOffsets, SelectionMode } from './types';
 
 interface DataGridBodyProps<T> {
   rows: readonly T[];
@@ -9,6 +9,7 @@ interface DataGridBodyProps<T> {
   emptyMessage: ReactNode;
   selectionMode: SelectionMode;
   isRowSelected: (row: T, index: number) => boolean;
+  columnOffsets: PinnedOffsets;
   onToggleSelect: (row: T, index: number) => void;
   onRowClick?: (row: T, index: number) => void;
 }
@@ -20,6 +21,7 @@ export function DataGridBody<T>({
   emptyMessage,
   selectionMode,
   isRowSelected,
+  columnOffsets,
   onToggleSelect,
   onRowClick,
 }: DataGridBodyProps<T>) {
@@ -42,6 +44,7 @@ export function DataGridBody<T>({
             columns={columns}
             selected={isRowSelected(row, index)}
             selectionMode={selectionMode}
+            columnOffsets={columnOffsets}
             onToggleSelect={onToggleSelect}
             onRowClick={onRowClick}
           />

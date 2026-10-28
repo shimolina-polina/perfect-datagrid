@@ -1,8 +1,15 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useId, useMemo, useState } from 'react';
 import { DataGridBody } from './DataGridBody';
 import { DataGridHeader } from './DataGridHeader';
-import type { DataGridColumn, DataGridProps, RowId, SortState } from './types';
-import { compareValues, moveItem } from './utils';
+import type {
+  DataGridColumn,
+  DataGridProps,
+  PinnedOffsets,
+  RowId,
+  SortState,
+} from './types';
+import { useMeasuredColumnWidths } from './useMeasuredColumnWidths';
+import { compareValues, moveItem, SELECTION_COLUMN_ID } from './utils';
 import './DataGrid.css';
 
 export function DataGrid<T>({
@@ -23,6 +30,7 @@ export function DataGrid<T>({
   minColumnWidth = 80,
   reorderableColumns = false,
 }: DataGridProps<T>) {
+  const captionId = useId();
   const [sort, setSort] = useState<SortState | null>(null);
   const [internalSelectedIds, setInternalSelectedIds] = useState<ReadonlyArray<RowId>>(
     () => defaultSelectedRowIds ?? [],
@@ -45,6 +53,40 @@ export function DataGrid<T>({
       .map((id) => byId.get(id))
       .filter((column): column is DataGridColumn<T> => column !== undefined);
   }, [columns, columnOrder]);
+
+  const displayColumns = useMemo(() => {
+    const left: DataGridColumn<T>[] = [];
+    const center: DataGridColumn<T>[] = [];
+    const right: DataGridColumn<T>[] = [];
+
+    orderedColumns.forEach((column) => {
+      if (column.pin === 'left') {
+        left.push(column);
+      } else if (column.pin === 'right') {
+        right.push(column);
+      } else {
+        center.push(column);
+      }
+    });
+
+    return [...left, ...center, ...right];
+  }, [orderedColumns]);
+
+  const hasPinnedColumns = useMemo(
+    () => displayColumns.some((column) => column.pin !== undefined),
+    [displayColumns],
+  );
+  const columnIds = useMemo(
+    () => [
+      ...(selectionMode === 'multiple' ? [SELECTION_COLUMN_ID] : []),
+      ...displayColumns.map((column) => column.id),
+    ],
+    [displayColumns, selectionMode],
+  );
+  const { tableRef, widths: measuredColumnWidths } = useMeasuredColumnWidths(
+    hasPinnedColumns,
+    columnIds,
+  );
 
   const isControlled = selectedRowIds !== undefined;
   const selectedIds = isControlled ? selectedRowIds : internalSelectedIds;
@@ -131,25 +173,72 @@ export function DataGrid<T>({
     });
   }, []);
 
+  const resolveColumnWidth = useCallback(
+    (column: DataGridColumn<T>) =>
+      columnWidths[column.id] ??
+      measuredColumnWidths[column.id] ??
+      (typeof column.width === 'number' ? column.width : 0),
+    [columnWidths, measuredColumnWidths],
+  );
+
+  const pinnedOffsets = useMemo<PinnedOffsets>(() => {
+    const offsets: PinnedOffsets = {};
+    const leftPinned = displayColumns.filter((column) => column.pin === 'left');
+    const rightPinned = displayColumns.filter((column) => column.pin === 'right');
+    const selectionWidth =
+      selectionMode === 'multiple'
+        ? (measuredColumnWidths[SELECTION_COLUMN_ID] ?? 44)
+        : 0;
+
+    let left = selectionWidth;
+    leftPinned.forEach((column, index) => {
+      offsets[column.id] = {
+        side: 'left',
+        value: left,
+        edge: index === leftPinned.length - 1,
+      };
+      left += resolveColumnWidth(column);
+    });
+
+    let right = 0;
+    for (let index = rightPinned.length - 1; index >= 0; index -= 1) {
+      const column = rightPinned[index];
+      if (!column) continue;
+
+      offsets[column.id] = {
+        side: 'right',
+        value: right,
+        edge: index === 0,
+      };
+      right += resolveColumnWidth(column);
+    }
+
+    return offsets;
+  }, [displayColumns, measuredColumnWidths, resolveColumnWidth, selectionMode]);
+
   const moveColumnTo = useCallback(
     (sourceId: string, targetId: string) => {
-      setColumnOrder(() => {
-        const ids = orderedColumns.map((column) => column.id);
-        return moveItem(ids, ids.indexOf(sourceId), ids.indexOf(targetId));
-      });
+      const source = displayColumns.find((column) => column.id === sourceId);
+      const target = displayColumns.find((column) => column.id === targetId);
+      if (!source || !target || source.pin !== target.pin) return;
+
+      const ids = displayColumns.map((column) => column.id);
+      setColumnOrder(moveItem(ids, ids.indexOf(sourceId), ids.indexOf(targetId)));
     },
-    [orderedColumns],
+    [displayColumns],
   );
 
   const moveColumnBy = useCallback(
     (columnId: string, offset: number) => {
-      setColumnOrder(() => {
-        const ids = orderedColumns.map((column) => column.id);
-        const from = ids.indexOf(columnId);
-        return moveItem(ids, from, from + offset);
-      });
+      const from = displayColumns.findIndex((column) => column.id === columnId);
+      const target = displayColumns[from + offset];
+      const source = displayColumns[from];
+      if (from < 0 || !source || !target || source.pin !== target.pin) return;
+
+      const ids = displayColumns.map((column) => column.id);
+      setColumnOrder(moveItem(ids, from, from + offset));
     },
-    [orderedColumns],
+    [displayColumns],
   );
 
   const handleColumnDragStart = useCallback((columnId: string) => {
@@ -203,49 +292,61 @@ export function DataGrid<T>({
 
   return (
     <div className={rootClassName}>
-      <div className="pdg__scroll">
-        <table className={tableClassName}>
-          {caption ? <caption className="pdg__caption">{caption}</caption> : null}
-          <colgroup>
-            {selectionMode === 'multiple' ? <col className="pdg__col-select" /> : null}
-            {orderedColumns.map((column) => {
-              const width = columnWidths[column.id] ?? column.width;
-              return <col key={column.id} style={width === undefined ? undefined : { width }} />;
-            })}
-          </colgroup>
-          <DataGridHeader
-            columns={orderedColumns}
-            sort={sort}
-            selectionMode={selectionMode}
-            allSelected={allSelected}
-            someSelected={someSelected}
-            resizableColumns={resizableColumns}
-            reorderableColumns={reorderableColumns}
-            minColumnWidth={minColumnWidth}
-            draggedColumnId={draggedColumnId}
-            dragOverColumnId={dragOverColumnId}
-            onToggleSort={toggleSort}
-            onToggleAll={toggleAll}
-            onResizeColumn={resizeColumn}
-            onResetColumnWidth={resetColumnWidth}
-            onColumnDragStart={handleColumnDragStart}
-            onColumnDragEnd={handleColumnDragEnd}
-            onColumnDragOver={handleColumnDragOver}
-            onColumnDragLeave={handleColumnDragLeave}
-            onColumnDrop={handleColumnDrop}
-            onMoveColumn={moveColumnBy}
-          />
-          <DataGridBody
-            rows={sortedRows}
-            columns={orderedColumns}
-            getRowId={getRowId}
-            emptyMessage={emptyMessage}
-            selectionMode={selectionMode}
-            isRowSelected={isRowSelected}
-            onToggleSelect={toggleRow}
-            onRowClick={onRowClick}
-          />
-        </table>
+      <div className="pdg__frame">
+        {caption ? (
+          <div id={captionId} className="pdg__caption">
+            {caption}
+          </div>
+        ) : null}
+        <div className="pdg__scroll">
+          <table
+            ref={tableRef}
+            className={tableClassName}
+            aria-labelledby={caption ? captionId : undefined}
+          >
+            <colgroup>
+              {selectionMode === 'multiple' ? <col className="pdg__col-select" /> : null}
+              {displayColumns.map((column) => {
+                const width = columnWidths[column.id] ?? column.width;
+                return <col key={column.id} style={width === undefined ? undefined : { width }} />;
+              })}
+            </colgroup>
+            <DataGridHeader
+              columns={displayColumns}
+              sort={sort}
+              selectionMode={selectionMode}
+              allSelected={allSelected}
+              someSelected={someSelected}
+              resizableColumns={resizableColumns}
+              reorderableColumns={reorderableColumns}
+              minColumnWidth={minColumnWidth}
+              draggedColumnId={draggedColumnId}
+              dragOverColumnId={dragOverColumnId}
+              pinnedOffsets={pinnedOffsets}
+              onToggleSort={toggleSort}
+              onToggleAll={toggleAll}
+              onResizeColumn={resizeColumn}
+              onResetColumnWidth={resetColumnWidth}
+              onColumnDragStart={handleColumnDragStart}
+              onColumnDragEnd={handleColumnDragEnd}
+              onColumnDragOver={handleColumnDragOver}
+              onColumnDragLeave={handleColumnDragLeave}
+              onColumnDrop={handleColumnDrop}
+              onMoveColumn={moveColumnBy}
+            />
+            <DataGridBody
+              rows={sortedRows}
+              columns={displayColumns}
+              getRowId={getRowId}
+              emptyMessage={emptyMessage}
+              selectionMode={selectionMode}
+              isRowSelected={isRowSelected}
+              columnOffsets={pinnedOffsets}
+              onToggleSelect={toggleRow}
+              onRowClick={onRowClick}
+            />
+          </table>
+        </div>
       </div>
     </div>
   );

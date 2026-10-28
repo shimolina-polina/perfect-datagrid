@@ -17,16 +17,21 @@
   line-height: 1.4;
 }
 
-.pdg__scroll {
-  overflow: auto;
+.pdg__frame {
+  overflow: hidden;
   border: 1px solid var(--pdg-border);
   border-radius: var(--pdg-radius);
   background: var(--pdg-bg);
 }
 
+.pdg__scroll {
+  overflow: auto;
+}
+
 .pdg__table {
   width: 100%;
-  border-collapse: collapse;
+  border-collapse: separate;
+  border-spacing: 0;
   background: var(--pdg-bg);
 }
 
@@ -41,6 +46,7 @@
 
 .pdg__header {
   position: relative;
+  z-index: 2;
   padding: 10px 14px;
   background: var(--pdg-header-bg);
   border-bottom: 1px solid var(--pdg-border);
@@ -51,6 +57,20 @@
   text-align: left;
   text-transform: uppercase;
   white-space: nowrap;
+}
+
+.pdg__header--pinned {
+  position: sticky;
+  z-index: 3;
+  background: var(--pdg-header-bg);
+}
+
+.pdg__header--pinned-left-edge {
+  box-shadow: inset -1px 0 0 var(--pdg-border);
+}
+
+.pdg__header--pinned-right-edge {
+  box-shadow: inset 1px 0 0 var(--pdg-border);
 }
 
 .pdg__drag-handle {
@@ -165,6 +185,20 @@ body.pdg--resizing {
   border-bottom: 1px solid var(--pdg-border);
   text-align: left;
   vertical-align: middle;
+}
+
+.pdg__cell--pinned {
+  position: sticky;
+  z-index: 1;
+  background: var(--pdg-bg);
+}
+
+.pdg__cell--pinned-left-edge {
+  box-shadow: inset -1px 0 0 var(--pdg-border);
+}
+
+.pdg__cell--pinned-right-edge {
+  box-shadow: inset 1px 0 0 var(--pdg-border);
 }
 
 .pdg__row:last-child .pdg__cell {

@@ -1,7 +1,8 @@
 import { ColumnDragHandle } from './ColumnDragHandle';
 import { ColumnResizeHandle } from './ColumnResizeHandle';
 import { SelectionCheckbox } from './SelectionCheckbox';
-import type { DataGridColumn, SelectionMode, SortState } from './types';
+import type { DataGridColumn, PinnedOffsets, SelectionMode, SortState } from './types';
+import { SELECTION_COLUMN_ID } from './utils';
 
 interface DataGridHeaderProps<T> {
   columns: ReadonlyArray<DataGridColumn<T>>;
@@ -14,6 +15,7 @@ interface DataGridHeaderProps<T> {
   minColumnWidth: number;
   draggedColumnId: string | null;
   dragOverColumnId: string | null;
+  pinnedOffsets: PinnedOffsets;
   onToggleSort: (column: DataGridColumn<T>) => void;
   onToggleAll: () => void;
   onResizeColumn: (columnId: string, width: number) => void;
@@ -37,6 +39,7 @@ export function DataGridHeader<T>({
   minColumnWidth,
   draggedColumnId,
   dragOverColumnId,
+  pinnedOffsets,
   onToggleSort,
   onToggleAll,
   onResizeColumn,
@@ -52,7 +55,12 @@ export function DataGridHeader<T>({
     <thead>
       <tr>
         {selectionMode === 'multiple' ? (
-          <th scope="col" className="pdg__header pdg__select-cell">
+          <th
+            scope="col"
+            data-column-id={SELECTION_COLUMN_ID}
+            className="pdg__header pdg__select-cell pdg__header--pinned pdg__header--pinned-left"
+            style={{ left: 0 }}
+          >
             <SelectionCheckbox
               checked={allSelected}
               indeterminate={someSelected}
@@ -65,13 +73,27 @@ export function DataGridHeader<T>({
           const direction = sort && sort.columnId === column.id ? sort.direction : null;
           const isSortable = Boolean(column.sortAccessor);
           const isResizable = resizableColumns && column.resizable !== false;
+          const pinOffset = pinnedOffsets[column.id];
+          const pinnedClasses = column.pin
+            ? [
+                'pdg__header--pinned',
+                `pdg__header--pinned-${column.pin}`,
+                pinOffset?.edge && `pdg__header--pinned-${column.pin}-edge`,
+              ]
+            : [];
           const headerClassName = [
             'pdg__header',
+            ...pinnedClasses,
             draggedColumnId === column.id && 'pdg__header--dragging',
             dragOverColumnId === column.id && 'pdg__header--drag-over',
           ]
             .filter(Boolean)
             .join(' ');
+          const pinStyle = pinOffset
+            ? pinOffset.side === 'left'
+              ? { left: pinOffset.value }
+              : { right: pinOffset.value }
+            : undefined;
           const ariaSort = direction
             ? direction === 'asc'
               ? 'ascending'
@@ -84,8 +106,9 @@ export function DataGridHeader<T>({
             <th
               key={column.id}
               scope="col"
+              data-column-id={column.id}
               className={headerClassName}
-              style={{ textAlign: column.align }}
+              style={{ textAlign: column.align, ...pinStyle }}
               aria-sort={ariaSort}
               onDragOver={
                 reorderableColumns

@@ -1,3 +1,5 @@
+export const SELECTION_COLUMN_ID = '__selection__';
+
 const collator = new Intl.Collator(undefined, { numeric: true, sensitivity: 'base' });
 
 export function compareValues(left: unknown, right: unknown): number {
