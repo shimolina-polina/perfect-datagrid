@@ -30,6 +30,20 @@ npm run preview
 npm run typecheck && npm run lint && npm test && npm run build
 ```
 
+## Git Workflow
+
+- Основная ветка — `main`. Прямые коммиты и пуш в `main` не делать: каждая задача — отдельная ветка.
+- Перед началом: `git status`, `git switch main`, `git pull --ff-only`, затем `git switch -c <type>/<short-name>`.
+- Префиксы веток: `feat/`, `fix/`, `refactor/`, `docs/`, `test/`, `chore/`. Пример: `feat/column-pinning`.
+- Коммиты атомарные, в формате Conventional Commits: `type(scope): summary` (например, `feat(datagrid): add column pinning`). Заголовок на английском, повелительное наклонение, до 72 символов.
+- Перед коммитом выполнять `npm run typecheck && npm run lint && npm test && npm run build`.
+- В коммит не должны попадать `node_modules/`, `dist/`, `.idea/`, секреты и локальные `.env`.
+- Не амендить опубликованные коммиты и не делать force-push в общие ветки. В своей ветке при необходимости — только `--force-with-lease`.
+- Перед PR синхронизировать ветку с `main`: `git fetch origin && git rebase origin/main`.
+- После пуша ветки открыть PR в `main` (GitHub UI или `gh pr create --base main --fill`, если `gh` установлен). В описании PR: что изменено, зачем и как проверено.
+- Мержить PR только после зелёных проверок и ревью, после мержа удалять ветку.
+- Коммит, пуш, PR и мерж выполнять только по явной просьбе пользователя.
+
 ## Structure
 
 ```text
@@ -92,4 +106,4 @@ src/demo/                            playground
 - Функциональные компоненты, именованные экспорты, без `any`.
 - Не добавлять комментарии без необходимости.
 - Не добавлять новые зависимости без явной причины.
-- Не коммитить изменения, если об этом не попросили.
+- Git-операции — по правилам раздела `Git Workflow`; без явной просьбы не коммитить, не пушить и не создавать PR.
