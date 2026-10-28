@@ -1,5 +1,6 @@
 export { DataGrid } from './DataGrid';
 export type {
+  ColumnPin,
   DataGridColumn,
   DataGridProps,
   RowId,

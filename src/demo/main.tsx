@@ -20,13 +20,27 @@ const employees: Employee[] = [
 ];
 
 const columns: DataGridColumn<Employee>[] = [
-  { id: 'name', header: 'Name', accessor: (row) => row.name, sortAccessor: (row) => row.name },
-  { id: 'role', header: 'Role', accessor: (row) => row.role, sortAccessor: (row) => row.role },
+  {
+    id: 'name',
+    header: 'Name',
+    accessor: (row) => row.name,
+    sortAccessor: (row) => row.name,
+    width: 220,
+    pin: 'left',
+  },
+  {
+    id: 'role',
+    header: 'Role',
+    accessor: (row) => row.role,
+    sortAccessor: (row) => row.role,
+    width: 200,
+  },
   {
     id: 'department',
     header: 'Department',
     accessor: (row) => row.department,
     sortAccessor: (row) => row.department,
+    width: 220,
   },
   {
     id: 'salary',
@@ -34,6 +48,8 @@ const columns: DataGridColumn<Employee>[] = [
     accessor: (row) => `$${row.salary.toLocaleString('en-US')}`,
     sortAccessor: (row) => row.salary,
     align: 'right',
+    width: 160,
+    pin: 'right',
   },
 ];
 
@@ -46,8 +62,8 @@ function App() {
         <p className="demo__eyebrow">perfect-datagrid</p>
         <h1 className="demo__title">A lightweight React data grid</h1>
         <p className="demo__subtitle">
-          Sortable, resizable and reorderable columns, multiple selection and zero runtime
-          dependencies beyond React.
+          Sortable, resizable, reorderable and pinnable columns, multiple selection and zero
+          runtime dependencies beyond React.
         </p>
       </header>
 

@@ -207,6 +207,70 @@ describe('DataGrid', () => {
     expect(rowCells(0)).toEqual(['20', 'Beta']);
   });
 
+  it('keeps the caption outside the scrolling area', () => {
+    render(
+      <DataGrid
+        rows={rows}
+        columns={columns}
+        getRowId={(row) => row.id}
+        caption="Engineering team"
+      />,
+    );
+
+    const caption = screen.getByText('Engineering team');
+    expect(caption.closest('.pdg__scroll')).toBeNull();
+    expect(screen.getByRole('table', { name: 'Engineering team' })).toBeInTheDocument();
+  });
+
+  it('groups pinned columns at the edges', () => {
+    const pinnedColumns: DataGridColumn<Row>[] = [
+      { ...columns[1], pin: 'right' },
+      { ...columns[0], pin: 'left' },
+    ];
+
+    render(<DataGrid rows={rows} columns={pinnedColumns} getRowId={(row) => row.id} />);
+
+    const headers = screen.getAllByRole('columnheader');
+    expect(
+      headers.map((header) => header.querySelector('.pdg__sort-button > span')?.textContent),
+    ).toEqual(['Name', 'Score']);
+    expect(headers[0]).toHaveClass('pdg__header--pinned-left');
+    expect(headers[1]).toHaveClass('pdg__header--pinned-right');
+    expect(screen.getByText('Beta').closest('td')).toHaveClass('pdg__cell--pinned-left');
+    expect(screen.getByText('20').closest('td')).toHaveClass('pdg__cell--pinned-right');
+  });
+
+  it('offsets pinned columns by their widths', () => {
+    const pinnedColumns: DataGridColumn<Row>[] = [
+      { ...columns[0], pin: 'left', width: 120 },
+      { ...columns[1], pin: 'left', width: 90 },
+    ];
+
+    render(<DataGrid rows={rows} columns={pinnedColumns} getRowId={(row) => row.id} />);
+
+    expect(screen.getByRole('columnheader', { name: 'Score' }).style.left).toBe('120px');
+    expect(screen.getByText('20').closest('td')?.style.left).toBe('120px');
+  });
+
+  it('offsets pinned columns after the selection column', () => {
+    const pinnedColumns: DataGridColumn<Row>[] = [
+      { ...columns[0], pin: 'left', width: 120 },
+    ];
+
+    render(
+      <DataGrid
+        rows={rows}
+        columns={pinnedColumns}
+        getRowId={(row) => row.id}
+        selectionMode="multiple"
+      />,
+    );
+
+    const selectAll = screen.getByRole('checkbox', { name: 'Select all rows' });
+    expect(selectAll.closest('th')).toHaveClass('pdg__header--pinned-left');
+    expect(screen.getByRole('columnheader', { name: 'Name' }).style.left).toBe('44px');
+  });
+
   it('renders the empty message when there are no rows', () => {
     render(<DataGrid rows={[]} columns={columns} emptyMessage="Nothing here" />);
 
