@@ -94,6 +94,8 @@ src/
 ## Architecture Rules
 
 - `DataGrid.tsx` — единственное место, где хранится состояние: сортировка, фильтры, выбор, ширины, порядок колонок и переопределения закрепления.
+- Настройки сортировки, фильтрации, порядка и закрепления поддерживают controlled и uncontrolled режимы по одному шаблону: `value` / `defaultValue` / `onValueChange`. Если controlled-prop не передан, состояние хранится внутри `DataGrid`, а колбэк всё равно вызывается.
+- `columnPins` — переопределения поверх `column.pin`: `'left'`/`'right'` закрепляют колонку, `null` открепляет, отсутствие ключа оставляет значение из конфигурации колонки.
 - Дочерние компоненты должны оставаться презентационными: получать данные и коллбэки через props.
 - Новые типы — в `types.ts`; чистые функции — в `lib/utils.ts`.
 - `shared/` не знает о конкретных разделах `header` и `body`; зависимости направлены только от разделов к `shared`.
@@ -104,6 +106,7 @@ src/
 
 ## Component Behavior
 
+- Внешнее управление настройками: `sort` / `defaultSort` / `onSortChange`, `filters` / `defaultFilters` / `onFiltersChange`, `columnOrder` / `defaultColumnOrder` / `onColumnOrderChange`, `columnPins` / `defaultColumnPins` / `onColumnPinsChange`.
 - Сортировка: `sortAccessor` опционален, состояния `asc -> desc -> none`.
 - Выбор: `selectionMode: 'none' | 'single' | 'multiple'`.
   - Controlled: `selectedRowIds`; uncontrolled: `defaultSelectedRowIds`.

@@ -56,6 +56,40 @@ body {
   font-size: 16px;
 }
 
+.demo__toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.demo__toolbar button {
+  padding: 8px 12px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #0f172a;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.demo__toolbar button:hover {
+  background: #e2e8f0;
+}
+
+.demo__toolbar button:focus-visible {
+  outline: 2px solid #2563eb;
+  outline-offset: 1px;
+}
+
+.demo__settings {
+  margin: 0 0 16px;
+  color: #475569;
+  font-size: 13px;
+}
+
 .demo__selection {
   margin-top: 16px;
   color: #475569;

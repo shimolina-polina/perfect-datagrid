@@ -1,6 +1,12 @@
 import { StrictMode, useState } from 'react';
 import { createRoot } from 'react-dom/client';
-import { DataGrid, type DataGridColumn } from '../index';
+import {
+  DataGrid,
+  type ColumnFilters,
+  type ColumnPins,
+  type DataGridColumn,
+  type SortState,
+} from '../index';
 import './demo.css';
 
 interface Employee {
@@ -198,8 +204,28 @@ const columns: DataGridColumn<Employee>[] = [
   },
 ];
 
+const defaultColumnOrder = columns.map((column) => column.id);
+
 function App() {
   const [selectedRows, setSelectedRows] = useState<Employee[]>([]);
+  const [sort, setSort] = useState<SortState | null>(null);
+  const [filters, setFilters] = useState<ColumnFilters>({});
+  const [columnOrder, setColumnOrder] = useState<string[]>(defaultColumnOrder);
+  const [columnPins, setColumnPins] = useState<ColumnPins>({});
+
+  const applyPreset = () => {
+    setSort({ columnId: 'salary', direction: 'desc' });
+    setFilters({ department: 'Platform' });
+    setColumnPins({ status: 'left' });
+    setColumnOrder(['status', 'role', 'name', 'department']);
+  };
+
+  const resetSettings = () => {
+    setSort(null);
+    setFilters({});
+    setColumnPins({});
+    setColumnOrder(defaultColumnOrder);
+  };
 
   return (
     <main className="demo">
@@ -212,6 +238,22 @@ function App() {
         </p>
       </header>
 
+      <div className="demo__toolbar">
+        <button type="button" onClick={applyPreset}>
+          Apply external settings
+        </button>
+        <button type="button" onClick={resetSettings}>
+          Reset settings
+        </button>
+      </div>
+
+      <p className="demo__settings">
+        Sort: {sort ? `${sort.columnId} ${sort.direction}` : 'none'} · Filters:{' '}
+        {Object.keys(filters).length} · Pins: {Object.keys(columnPins).length} · Order:{' '}
+        {columnOrder.slice(0, 4).join(', ')}
+        {columnOrder.length > 4 ? '…' : ''}
+      </p>
+
       <DataGrid
         rows={employees}
         columns={columns}
@@ -222,6 +264,14 @@ function App() {
         reorderableColumns
         filterableColumns
         selectionMode="multiple"
+        sort={sort}
+        onSortChange={setSort}
+        filters={filters}
+        onFiltersChange={setFilters}
+        columnOrder={columnOrder}
+        onColumnOrderChange={setColumnOrder}
+        columnPins={columnPins}
+        onColumnPinsChange={setColumnPins}
         onSelectionChange={(_ids, selectedRows) => setSelectedRows(selectedRows)}
       />
 

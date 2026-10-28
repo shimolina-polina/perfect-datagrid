@@ -4,6 +4,8 @@ export type SortDirection = 'asc' | 'desc';
 export type SelectionMode = 'none' | 'single' | 'multiple';
 export type RowId = string | number;
 export type ColumnPin = 'left' | 'right';
+export type ColumnFilters = Record<string, string>;
+export type ColumnPins = Record<string, ColumnPin | null>;
 
 export interface DataGridColumn<T> {
   id: string;
@@ -36,6 +38,18 @@ export interface DataGridProps<T> {
   minColumnWidth?: number;
   reorderableColumns?: boolean;
   filterableColumns?: boolean;
+  sort?: SortState | null;
+  defaultSort?: SortState | null;
+  onSortChange?: (sort: SortState | null) => void;
+  filters?: Readonly<ColumnFilters>;
+  defaultFilters?: Readonly<ColumnFilters>;
+  onFiltersChange?: (filters: ColumnFilters) => void;
+  columnOrder?: ReadonlyArray<string>;
+  defaultColumnOrder?: ReadonlyArray<string>;
+  onColumnOrderChange?: (columnOrder: string[]) => void;
+  columnPins?: Readonly<ColumnPins>;
+  defaultColumnPins?: Readonly<ColumnPins>;
+  onColumnPinsChange?: (columnPins: ColumnPins) => void;
 }
 
 export interface SortState {
