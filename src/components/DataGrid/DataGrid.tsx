@@ -10,7 +10,7 @@ import type {
   SortState,
 } from './types';
 import { useMeasuredColumnWidths } from './useMeasuredColumnWidths';
-import { compareValues, moveItem, SELECTION_COLUMN_ID } from './utils';
+import { compareValues, matchesFilter, moveItem, SELECTION_COLUMN_ID } from './utils';
 import './DataGrid.css';
 
 export function DataGrid<T>({
@@ -30,9 +30,11 @@ export function DataGrid<T>({
   resizableColumns = false,
   minColumnWidth = 80,
   reorderableColumns = false,
+  filterableColumns = false,
 }: DataGridProps<T>) {
   const captionId = useId();
   const [sort, setSort] = useState<SortState | null>(null);
+  const [filters, setFilters] = useState<Record<string, string>>({});
   const [internalSelectedIds, setInternalSelectedIds] = useState<ReadonlyArray<RowId>>(
     () => defaultSelectedRowIds ?? [],
   );
@@ -104,15 +106,35 @@ export function DataGrid<T>({
   );
 
   const sortedRows = useMemo(() => {
-    if (!sort) return [...rows];
+    const activeFilters = filterableColumns
+      ? Object.entries(filters).filter(([, value]) => value.trim() !== '')
+      : [];
+
+    const filterAccessors = new Map(
+      columns
+        .filter((column) => column.filterable !== false)
+        .map((column) => [column.id, column.filterAccessor ?? column.sortAccessor] as const),
+    );
+
+    const filteredRows =
+      activeFilters.length === 0
+        ? rows
+        : rows.filter((row) =>
+            activeFilters.every(([columnId, value]) => {
+              const accessor = filterAccessors.get(columnId);
+              return accessor ? matchesFilter(accessor(row), value) : true;
+            }),
+          );
+
+    if (!sort) return filteredRows;
 
     const column = columns.find((item) => item.id === sort.columnId);
     const accessor = column?.sortAccessor;
-    if (!accessor) return [...rows];
+    if (!accessor) return filteredRows;
 
     const factor = sort.direction === 'asc' ? 1 : -1;
-    return [...rows].sort((a, b) => compareValues(accessor(a), accessor(b)) * factor);
-  }, [rows, columns, sort]);
+    return [...filteredRows].sort((a, b) => compareValues(accessor(a), accessor(b)) * factor);
+  }, [rows, columns, filters, filterableColumns, sort]);
 
   const isRowSelected = (row: T, index: number) =>
     Boolean(isExternallySelected?.(row, index)) ||
@@ -302,6 +324,19 @@ export function DataGrid<T>({
     });
   };
 
+  const updateFilter = useCallback((columnId: string, value: string) => {
+    setFilters((current) => {
+      if (value === '') {
+        if (!(columnId in current)) return current;
+        const next = { ...current };
+        delete next[columnId];
+        return next;
+      }
+
+      return current[columnId] === value ? current : { ...current, [columnId]: value };
+    });
+  }, []);
+
   const rootClassName = ['pdg', striped && 'pdg--striped', onRowClick && 'pdg--clickable', className]
     .filter(Boolean)
     .join(' ');
@@ -338,6 +373,8 @@ export function DataGrid<T>({
               someSelected={someSelected}
               resizableColumns={resizableColumns}
               reorderableColumns={reorderableColumns}
+              filterableColumns={filterableColumns}
+              filters={filters}
               minColumnWidth={minColumnWidth}
               draggedColumnId={draggedColumnId}
               dragOverColumnId={dragOverColumnId}
@@ -353,6 +390,7 @@ export function DataGrid<T>({
               onColumnDrop={handleColumnDrop}
               onMoveColumn={moveColumnBy}
               onTogglePin={toggleColumnPin}
+              onFilterChange={updateFilter}
             />
             <DataGridBody
               rows={sortedRows}

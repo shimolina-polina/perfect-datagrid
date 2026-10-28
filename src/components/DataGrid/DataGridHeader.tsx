@@ -13,6 +13,8 @@ interface DataGridHeaderProps<T> {
   someSelected: boolean;
   resizableColumns: boolean;
   reorderableColumns: boolean;
+  filterableColumns: boolean;
+  filters: Record<string, string>;
   minColumnWidth: number;
   draggedColumnId: string | null;
   dragOverColumnId: string | null;
@@ -28,6 +30,7 @@ interface DataGridHeaderProps<T> {
   onColumnDrop: (columnId: string) => void;
   onMoveColumn: (columnId: string, offset: number) => void;
   onTogglePin: (columnId: string) => void;
+  onFilterChange: (columnId: string, value: string) => void;
 }
 
 export function DataGridHeader<T>({
@@ -38,6 +41,8 @@ export function DataGridHeader<T>({
   someSelected,
   resizableColumns,
   reorderableColumns,
+  filterableColumns,
+  filters,
   minColumnWidth,
   draggedColumnId,
   dragOverColumnId,
@@ -53,7 +58,15 @@ export function DataGridHeader<T>({
   onColumnDrop,
   onMoveColumn,
   onTogglePin,
+  onFilterChange,
 }: DataGridHeaderProps<T>) {
+  const showFilterRow =
+    filterableColumns &&
+    columns.some(
+      (column) =>
+        column.filterable !== false && Boolean(column.filterAccessor ?? column.sortAccessor),
+    );
+
   return (
     <thead>
       <tr>
@@ -182,6 +195,57 @@ export function DataGridHeader<T>({
           );
         })}
       </tr>
+      {showFilterRow ? (
+        <tr className="pdg__filter-row">
+          {selectionMode === 'multiple' ? (
+            <th
+              scope="col"
+              className="pdg__filter-cell pdg__filter-cell--pinned pdg__filter-cell--pinned-left"
+              style={{ left: 0 }}
+            />
+          ) : null}
+          {columns.map((column) => {
+            const pinOffset = pinnedOffsets[column.id];
+            const isFilterable =
+              column.filterable !== false &&
+              Boolean(column.filterAccessor ?? column.sortAccessor);
+            const filterCellClassName = [
+              'pdg__filter-cell',
+              column.pin && 'pdg__filter-cell--pinned',
+              column.pin && `pdg__filter-cell--pinned-${column.pin}`,
+              column.pin && pinOffset?.edge && `pdg__filter-cell--pinned-${column.pin}-edge`,
+            ]
+              .filter(Boolean)
+              .join(' ');
+            const filterPinStyle = pinOffset
+              ? pinOffset.side === 'left'
+                ? { left: pinOffset.value }
+                : { right: pinOffset.value }
+              : undefined;
+
+            return (
+              <th
+                key={column.id}
+                scope="col"
+                data-column-id={column.id}
+                className={filterCellClassName}
+                style={filterPinStyle}
+              >
+                {isFilterable ? (
+                  <input
+                    type="search"
+                    className="pdg__filter-input"
+                    aria-label={`Filter ${column.id} column`}
+                    placeholder="Filter"
+                    value={filters[column.id] ?? ''}
+                    onChange={(event) => onFilterChange(column.id, event.target.value)}
+                  />
+                ) : null}
+              </th>
+            );
+          })}
+        </tr>
+      ) : null}
     </thead>
   );
 }

@@ -10,6 +10,8 @@ export interface DataGridColumn<T> {
   header: ReactNode;
   accessor: (row: T) => ReactNode;
   sortAccessor?: (row: T) => string | number | Date | null | undefined;
+  filterAccessor?: (row: T) => string | number | Date | null | undefined;
+  filterable?: boolean;
   width?: number | string;
   align?: 'left' | 'center' | 'right';
   resizable?: boolean;
@@ -33,6 +35,7 @@ export interface DataGridProps<T> {
   resizableColumns?: boolean;
   minColumnWidth?: number;
   reorderableColumns?: boolean;
+  filterableColumns?: boolean;
 }
 
 export interface SortState {
