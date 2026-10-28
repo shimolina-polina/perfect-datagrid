@@ -148,12 +148,14 @@ const columns: DataGridColumn<Employee>[] = [
     id: 'email',
     header: 'Email',
     accessor: (row) => row.email,
+    filterAccessor: (row) => row.email,
     width: 240,
   },
   {
     id: 'phone',
     header: 'Phone',
     accessor: (row) => row.phone,
+    filterAccessor: (row) => row.phone,
     width: 170,
   },
   {
@@ -205,8 +207,8 @@ function App() {
         <p className="demo__eyebrow">perfect-datagrid</p>
         <h1 className="demo__title">A lightweight React data grid</h1>
         <p className="demo__subtitle">
-          200 rows and 12 columns with sortable, resizable, reorderable and pinnable headers,
-          multiple selection and zero runtime dependencies beyond React.
+          200 rows and 12 columns with sortable, filterable, resizable, reorderable and pinnable
+          headers, multiple selection and zero runtime dependencies beyond React.
         </p>
       </header>
 
@@ -218,6 +220,7 @@ function App() {
         striped
         resizableColumns
         reorderableColumns
+        filterableColumns
         selectionMode="multiple"
         onSelectionChange={(_ids, selectedRows) => setSelectedRows(selectedRows)}
       />

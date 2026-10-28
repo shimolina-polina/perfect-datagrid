@@ -73,6 +73,55 @@
   box-shadow: inset 1px 0 0 var(--pdg-border);
 }
 
+.pdg__filter-row {
+  background: var(--pdg-header-bg);
+}
+
+.pdg__filter-cell {
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--pdg-border);
+  background: var(--pdg-header-bg);
+  text-align: left;
+  white-space: nowrap;
+}
+
+.pdg__filter-cell--pinned {
+  position: sticky;
+  z-index: 1;
+  background: var(--pdg-header-bg);
+}
+
+.pdg__filter-cell--pinned-left-edge {
+  box-shadow: inset -1px 0 0 var(--pdg-border);
+}
+
+.pdg__filter-cell--pinned-right-edge {
+  box-shadow: inset 1px 0 0 var(--pdg-border);
+}
+
+.pdg__filter-input {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  padding: 3px 6px;
+  border: 1px solid var(--pdg-border);
+  border-radius: 6px;
+  background: var(--pdg-bg);
+  color: var(--pdg-text);
+  font: inherit;
+  font-size: 12px;
+}
+
+.pdg__filter-input::placeholder {
+  color: var(--pdg-muted);
+}
+
+.pdg__filter-input:focus-visible {
+  border-color: transparent;
+  outline: 2px solid var(--pdg-accent);
+  outline-offset: 1px;
+}
+
 .pdg__menu {
   position: absolute;
   top: calc(50% - 11px);
