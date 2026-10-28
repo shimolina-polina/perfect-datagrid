@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { DataGridRow } from './DataGridRow';
-import type { DataGridColumn, PinnedOffsets, SelectionMode } from './types';
+import type { DataGridColumn, PinnedOffsets, SelectionMode } from '../types';
 
 interface DataGridBodyProps<T> {
   rows: readonly T[];

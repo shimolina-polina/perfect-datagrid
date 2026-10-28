@@ -1,5 +1,5 @@
-import { SelectionCheckbox } from './SelectionCheckbox';
-import type { DataGridColumn, PinnedOffsets, SelectionMode } from './types';
+import { SelectionCheckbox } from '../shared/SelectionCheckbox';
+import type { DataGridColumn, PinnedOffsets, SelectionMode } from '../types';
 
 interface DataGridRowProps<T> {
   row: T;
