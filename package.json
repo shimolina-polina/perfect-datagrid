@@ -24,6 +24,8 @@
     "dist"
   ],
   "sideEffects": [
+    "./dist/index.js",
+    "./dist/index.cjs",
     "**/*.css"
   ],
   "main": "./dist/index.cjs",

@@ -14,7 +14,6 @@ React and React DOM `>= 18` are peer dependencies.
 
 ```tsx
 import { DataGrid, type DataGridColumn } from 'perfect-datagrid';
-import 'perfect-datagrid/style.css';
 
 interface Employee {
   id: number;
@@ -32,7 +31,19 @@ export function Employees({ rows }: { rows: Employee[] }) {
 }
 ```
 
-The stylesheet is not injected automatically — import `perfect-datagrid/style.css` once in your application.
+The stylesheet is injected automatically the first time the package is imported, so no CSS import is required.
+
+## Styles
+
+Styles are bundled into `dist/index.js` and `dist/index.cjs` and added to `<head>` on import as a single `<style id="perfect-datagrid-style">` element. Importing the package twice, in both module formats, or during server rendering does not duplicate or break the injection: the snippet is skipped when there is no `document` and when the element already exists.
+
+If you prefer to serve the CSS yourself, the file is still published:
+
+```ts
+import 'perfect-datagrid/style.css';
+```
+
+That is only necessary when inline styles are blocked by a strict `style-src` policy. If both paths are used, the same rules are applied twice and rendering is unaffected.
 
 ## Features
 
@@ -147,7 +158,7 @@ const [columnPins, setColumnPins] = useState<ColumnPins>({ status: 'left' });
 
 ## Styling
 
-All styles live in `perfect-datagrid/style.css`. Class names are prefixed with `pdg` and colours use `--pdg-*` CSS variables, so themes can be adjusted without overriding structure.
+All styles live in `src/components/DataGrid/DataGrid.css` and ship as `perfect-datagrid/style.css` plus an auto-injected copy in the JS entry points. Class names are prefixed with `pdg` and colours use `--pdg-*` CSS variables, so themes can be adjusted without overriding structure.
 
 ## Development
 

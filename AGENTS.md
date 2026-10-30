@@ -135,7 +135,8 @@ src/
 
 - npm публикует только `dist` (`files` в `package.json`).
 - Точки входа: `dist/index.js`, `dist/index.cjs`, `dist/index.d.ts`.
-- CSS не инжектится автоматически: потребитель импортирует `perfect-datagrid/style.css`.
+- Сборка добавляет CSS в `dist/index.js` и `dist/index.cjs`: при импорте создаётся `<style id="perfect-datagrid-style">`, повторная инъекция и импорт без `document` пропускаются. Плагин — `injectStyles` в `vite.config.ts`, поэтому `./dist/index.js` и `./dist/index.cjs` перечислены в `sideEffects`.
+- `perfect-datagrid/style.css` остаётся опубликованным для явного импорта (строгий CSP, собственный CSS-пайплайн).
 - Перед публикацией: обновить версию и проверить `npm pack --dry-run`.
 
 ## Code Style

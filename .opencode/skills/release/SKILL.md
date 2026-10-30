@@ -71,7 +71,9 @@ npm run typecheck && npm run lint && npm test && npm run build
 npm pack --dry-run
 ```
 
-Expected tarball: `dist/index.js`, `dist/index.cjs`, both source maps, `dist/index.d.ts` plus component `d.ts` files, `dist/style.css`, `README.md`, `LICENSE`, `package.json`. Roughly 23 files and 60 kB packed.
+Expected tarball: `dist/index.js`, `dist/index.cjs`, both source maps, `dist/index.d.ts` plus component `d.ts` files, `dist/style.css`, `README.md`, `LICENSE`, `package.json`. Roughly 23 files and 63 kB packed.
+
+Both entry chunks must contain the style injection snippet (`perfect-datagrid-style`); `dist/style.css` is still emitted for explicit imports.
 
 Fail the release if `node_modules/`, `.idea/`, `.env`, tests, or `src/` are included, or if the CSS entry or declaration files are missing.
 
