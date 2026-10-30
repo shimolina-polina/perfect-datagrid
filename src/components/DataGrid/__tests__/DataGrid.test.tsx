@@ -589,4 +589,162 @@ describe('DataGrid', () => {
     expect(headers[0]).toHaveTextContent('Name');
     expect(headers[0]).not.toHaveClass('pdg__header--pinned-left');
   });
+
+  it('filters columns that define only an accessor', () => {
+    const accessorOnlyColumns: DataGridColumn<Row>[] = [
+      { id: 'name', header: 'Name', accessor: (row) => row.name },
+    ];
+
+    render(<DataGrid rows={rows} columns={accessorOnlyColumns} filterableColumns />);
+
+    fireEvent.change(screen.getByRole('searchbox', { name: 'Filter name column' }), {
+      target: { value: 'alp' },
+    });
+
+    expect(dataValues(0)).toEqual(['Alpha']);
+  });
+
+  it('keeps filters working without a controlled filters prop', () => {
+    const onFiltersChange = vi.fn();
+
+    render(
+      <DataGrid
+        rows={rows}
+        columns={columns}
+        getRowId={(row) => row.id}
+        filterableColumns
+        onFiltersChange={onFiltersChange}
+      />,
+    );
+
+    fireEvent.change(screen.getByRole('searchbox', { name: 'Filter name column' }), {
+      target: { value: 'alp' },
+    });
+
+    expect(onFiltersChange).toHaveBeenLastCalledWith({ name: 'alp' });
+    expect(dataValues(0)).toEqual(['Alpha']);
+  });
+
+  it('builds select filter options from the data and filters by several values', () => {
+    const selectColumns: DataGridColumn<Row>[] = [
+      { id: 'name', header: 'Name', accessor: (row) => row.name, filterType: 'select' },
+      { id: 'score', header: 'Score', accessor: (row) => row.score, sortAccessor: (row) => row.score },
+    ];
+
+    render(
+      <DataGrid rows={rows} columns={selectColumns} getRowId={(row) => row.id} filterableColumns />,
+    );
+
+    const trigger = screen.getByRole('button', { name: 'Filter name column' });
+    expect(trigger).toHaveTextContent('All');
+
+    fireEvent.click(trigger);
+
+    const options = within(screen.getByRole('group', { name: 'Filter name column options' }))
+      .getAllByRole('checkbox')
+      .map((checkbox) => checkbox.closest('label')?.textContent);
+    expect(options).toEqual(['Alpha', 'Beta', 'Gamma']);
+
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Alpha' }));
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Gamma' }));
+
+    expect(dataValues(0)).toEqual(['Alpha', 'Gamma']);
+    expect(trigger).toHaveTextContent('2 selected');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Clear' }));
+
+    expect(dataValues(0)).toEqual(['Beta', 'Alpha', 'Gamma']);
+    expect(trigger).toHaveTextContent('All');
+  });
+
+  it('includes empty strings in select filter options', () => {
+    const rowsWithEmpty: Row[] = [
+      { id: 1, name: 'Alpha', score: 10 },
+      { id: 2, name: '', score: 20 },
+      { id: 3, name: 'Gamma', score: 30 },
+    ];
+    const selectColumns: DataGridColumn<Row>[] = [
+      { id: 'name', header: 'Name', accessor: (row) => row.name, filterType: 'select' },
+    ];
+
+    render(
+      <DataGrid
+        rows={rowsWithEmpty}
+        columns={selectColumns}
+        getRowId={(row) => row.id}
+        filterableColumns
+      />,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Filter name column' }));
+
+    expect(screen.getByRole('checkbox', { name: '(empty)' })).not.toBeChecked();
+
+    fireEvent.click(screen.getByRole('checkbox', { name: '(empty)' }));
+
+    expect(dataValues(0)).toEqual(['']);
+    expect(screen.getByRole('button', { name: 'Filter name column' })).toHaveTextContent(
+      '(empty)',
+    );
+  });
+
+  it('combines select and text filters', () => {
+    const mixedColumns: DataGridColumn<Row>[] = [
+      { id: 'name', header: 'Name', accessor: (row) => row.name, filterType: 'select' },
+      { id: 'score', header: 'Score', accessor: (row) => row.score, sortAccessor: (row) => row.score },
+    ];
+
+    render(
+      <DataGrid rows={rows} columns={mixedColumns} getRowId={(row) => row.id} filterableColumns />,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Filter name column' }));
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Alpha' }));
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Gamma' }));
+
+    fireEvent.change(screen.getByRole('searchbox', { name: 'Filter score column' }), {
+      target: { value: '1' },
+    });
+
+    expect(dataValues(0)).toEqual(['Gamma']);
+  });
+
+  it('supports controlled select filters', () => {
+    const onFiltersChange = vi.fn();
+    const selectColumns: DataGridColumn<Row>[] = [
+      { id: 'name', header: 'Name', accessor: (row) => row.name, filterType: 'select' },
+    ];
+    const { rerender } = render(
+      <DataGrid
+        rows={rows}
+        columns={selectColumns}
+        getRowId={(row) => row.id}
+        filterableColumns
+        filters={{ name: ['Alpha'] }}
+        onFiltersChange={onFiltersChange}
+      />,
+    );
+
+    expect(dataValues(0)).toEqual(['Alpha']);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Filter name column' }));
+    expect(screen.getByRole('checkbox', { name: 'Alpha' })).toBeChecked();
+
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Beta' }));
+    expect(onFiltersChange).toHaveBeenLastCalledWith({ name: ['Alpha', 'Beta'] });
+    expect(dataValues(0)).toEqual(['Alpha']);
+
+    rerender(
+      <DataGrid
+        rows={rows}
+        columns={selectColumns}
+        getRowId={(row) => row.id}
+        filterableColumns
+        filters={{ name: ['Alpha', 'Beta'] }}
+        onFiltersChange={onFiltersChange}
+      />,
+    );
+
+    expect(dataValues(0)).toEqual(['Beta', 'Alpha']);
+  });
 });

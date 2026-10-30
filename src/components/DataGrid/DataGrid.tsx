@@ -2,6 +2,8 @@ import { useCallback, useId, useMemo, useState } from 'react';
 import { DataGridBody } from './body/DataGridBody';
 import { DataGridHeader } from './header/DataGridHeader';
 import type {
+  ColumnFilters,
+  ColumnFilterValue,
   ColumnPin,
   ColumnPins,
   DataGridColumn,
@@ -11,7 +13,19 @@ import type {
   SortState,
 } from './types';
 import { useMeasuredColumnWidths } from './hooks/useMeasuredColumnWidths';
-import { compareValues, matchesFilter, moveItem, SELECTION_COLUMN_ID } from './lib/utils';
+import { useStickyHeaderOffset } from './hooks/useStickyHeaderOffset';
+import {
+  collectFilterOptions,
+  compareValues,
+  isEmptyFilterValue,
+  isSameFilterValue,
+  matchesFilter,
+  matchesFilterValues,
+  moveItem,
+  normalizeFilterValues,
+  SELECTION_COLUMN_ID,
+  toFilterText,
+} from './lib/utils';
 import './DataGrid.css';
 
 export function DataGrid<T>({
@@ -32,6 +46,7 @@ export function DataGrid<T>({
   minColumnWidth = 80,
   reorderableColumns = false,
   filterableColumns = false,
+  maxHeight,
   sort: controlledSort,
   defaultSort,
   onSortChange,
@@ -47,7 +62,7 @@ export function DataGrid<T>({
 }: DataGridProps<T>) {
   const captionId = useId();
   const [internalSort, setInternalSort] = useState<SortState | null>(() => defaultSort ?? null);
-  const [internalFilters, setInternalFilters] = useState<Record<string, string>>(() => ({
+  const [internalFilters, setInternalFilters] = useState<ColumnFilters>(() => ({
     ...(defaultFilters ?? {}),
   }));
   const [internalSelectedIds, setInternalSelectedIds] = useState<ReadonlyArray<RowId>>(
@@ -119,6 +134,7 @@ export function DataGrid<T>({
     hasPinnedColumns,
     columnIds,
   );
+  const filterRowOffset = useStickyHeaderOffset(tableRef);
 
   const isControlled = selectedRowIds !== undefined;
   const selectedIds = isControlled ? selectedRowIds : internalSelectedIds;
@@ -129,16 +145,60 @@ export function DataGrid<T>({
     [getRowId],
   );
 
+  const filterAccessors = useMemo(() => {
+    const accessors = new Map<string, (row: T) => unknown>();
+
+    columns.forEach((column) => {
+      if (column.filterable === false) return;
+
+      const accessor = column.filterAccessor ?? column.sortAccessor;
+      if (accessor) {
+        accessors.set(column.id, accessor);
+        return;
+      }
+
+      if (rows.some((row) => toFilterText(column.accessor(row)) !== null)) {
+        accessors.set(column.id, column.accessor);
+      }
+    });
+
+    return accessors;
+  }, [columns, rows]);
+
+  const filterableColumnIds = useMemo(
+    () => new Set(filterAccessors.keys()),
+    [filterAccessors],
+  );
+
+  const selectFilterColumnIds = useMemo(
+    () =>
+      new Set(
+        columns.filter((column) => column.filterType === 'select').map((column) => column.id),
+      ),
+    [columns],
+  );
+
+  const filterOptions = useMemo(() => {
+    const options: Record<string, readonly string[]> = {};
+
+    columns.forEach((column) => {
+      if (column.filterType !== 'select') return;
+
+      const accessor = filterAccessors.get(column.id);
+      if (!accessor) return;
+
+      options[column.id] = collectFilterOptions(rows, accessor);
+    });
+
+    return options;
+  }, [columns, filterAccessors, rows]);
+
   const sortedRows = useMemo(() => {
     const activeFilters = filterableColumns
-      ? Object.entries(filters).filter(([, value]) => value.trim() !== '')
+      ? Object.entries(filters).filter(
+          ([columnId, value]) => filterAccessors.has(columnId) && !isEmptyFilterValue(value),
+        )
       : [];
-
-    const filterAccessors = new Map(
-      columns
-        .filter((column) => column.filterable !== false)
-        .map((column) => [column.id, column.filterAccessor ?? column.sortAccessor] as const),
-    );
 
     const filteredRows =
       activeFilters.length === 0
@@ -146,7 +206,16 @@ export function DataGrid<T>({
         : rows.filter((row) =>
             activeFilters.every(([columnId, value]) => {
               const accessor = filterAccessors.get(columnId);
-              return accessor ? matchesFilter(accessor(row), value) : true;
+              if (!accessor) return true;
+
+              if (selectFilterColumnIds.has(columnId)) {
+                return matchesFilterValues(accessor(row), normalizeFilterValues(value));
+              }
+
+              return matchesFilter(
+                accessor(row),
+                typeof value === 'string' ? value : (value[0] ?? ''),
+              );
             }),
           );
 
@@ -158,7 +227,15 @@ export function DataGrid<T>({
 
     const factor = sort.direction === 'asc' ? 1 : -1;
     return [...filteredRows].sort((a, b) => compareValues(accessor(a), accessor(b)) * factor);
-  }, [rows, columns, filters, filterableColumns, sort]);
+  }, [
+    rows,
+    columns,
+    filters,
+    filterableColumns,
+    filterAccessors,
+    selectFilterColumnIds,
+    sort,
+  ]);
 
   const isRowSelected = (row: T, index: number) =>
     Boolean(isExternallySelected?.(row, index)) ||
@@ -361,14 +438,14 @@ export function DataGrid<T>({
   };
 
   const updateFilter = useCallback(
-    (columnId: string, value: string) => {
-      if ((filters[columnId] ?? '') === value) return;
+    (columnId: string, value: ColumnFilterValue) => {
+      if (isSameFilterValue(filters[columnId], value)) return;
 
-      const nextFilters = { ...filters };
-      if (value === '') {
+      const nextFilters: ColumnFilters = { ...filters };
+      if (isEmptyFilterValue(value)) {
         delete nextFilters[columnId];
       } else {
-        nextFilters[columnId] = value;
+        nextFilters[columnId] = typeof value === 'string' ? value : [...value];
       }
 
       if (controlledFilters === undefined) {
@@ -394,7 +471,7 @@ export function DataGrid<T>({
             {caption}
           </div>
         ) : null}
-        <div className="pdg__scroll">
+        <div className="pdg__scroll" style={maxHeight === undefined ? undefined : { maxHeight }}>
           <table
             ref={tableRef}
             className={tableClassName}
@@ -416,7 +493,10 @@ export function DataGrid<T>({
               resizableColumns={resizableColumns}
               reorderableColumns={reorderableColumns}
               filterableColumns={filterableColumns}
+              filterableColumnIds={filterableColumnIds}
+              filterOptions={filterOptions}
               filters={filters}
+              filterRowOffset={filterRowOffset}
               minColumnWidth={minColumnWidth}
               draggedColumnId={draggedColumnId}
               dragOverColumnId={dragOverColumnId}

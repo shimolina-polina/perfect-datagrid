@@ -4,7 +4,9 @@ export type SortDirection = 'asc' | 'desc';
 export type SelectionMode = 'none' | 'single' | 'multiple';
 export type RowId = string | number;
 export type ColumnPin = 'left' | 'right';
-export type ColumnFilters = Record<string, string>;
+export type ColumnFilterType = 'text' | 'select';
+export type ColumnFilterValue = string | readonly string[];
+export type ColumnFilters = Record<string, ColumnFilterValue>;
 export type ColumnPins = Record<string, ColumnPin | null>;
 
 export interface DataGridColumn<T> {
@@ -14,6 +16,7 @@ export interface DataGridColumn<T> {
   sortAccessor?: (row: T) => string | number | Date | null | undefined;
   filterAccessor?: (row: T) => string | number | Date | null | undefined;
   filterable?: boolean;
+  filterType?: ColumnFilterType;
   width?: number | string;
   align?: 'left' | 'center' | 'right';
   resizable?: boolean;
@@ -38,6 +41,7 @@ export interface DataGridProps<T> {
   minColumnWidth?: number;
   reorderableColumns?: boolean;
   filterableColumns?: boolean;
+  maxHeight?: number | string;
   sort?: SortState | null;
   defaultSort?: SortState | null;
   onSortChange?: (sort: SortState | null) => void;

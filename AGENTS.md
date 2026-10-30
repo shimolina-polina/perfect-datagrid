@@ -60,6 +60,7 @@ src/
       header/                         всё, что рендерится в thead
         DataGridHeader.tsx
         ColumnDragHandle.tsx
+        ColumnFilterSelect.tsx
         ColumnMenu.tsx
         ColumnResizeHandle.tsx
       body/                           всё, что рендерится в tbody
@@ -69,6 +70,7 @@ src/
         SelectionCheckbox.tsx
       hooks/                          stateful React-логика без JSX
         useMeasuredColumnWidths.ts
+        useStickyHeaderOffset.ts
       lib/                            чистые функции без React
         utils.ts
       __tests__/
@@ -116,7 +118,9 @@ src/
 - Ресайз: `resizableColumns`, `minColumnWidth`, `column.resizable: false` отключает колонку. Ширины хранятся по `column.id`, применяются через `<colgroup>`; при ресайзе таблица переходит на `table-layout: fixed`.
 - Перестановка: `reorderableColumns`. Порядок хранится по id и объединяется с актуальным списком `columns` (новые колонки добавляются в конец). Работает drag-and-drop и стрелки на хвате. Перестановка разрешена только внутри группы с одинаковым `pin`.
 - Закрепление: `column.pin: 'left' | 'right'`. Колонки группируются по краям (`left`, обычные, `right`), смещения считаются из фактических ширин через `ResizeObserver` с fallback на числовой `column.width`. При `selectionMode: 'multiple'` колонка выбора тоже закреплена слева. Меню колонки позволяет закрепить её слева или открепить; переопределения хранятся в `DataGrid`.
-- Фильтрация: `filterableColumns` включает строку фильтров под заголовком. Значение колонки берётся из `column.filterAccessor`, иначе из `sortAccessor`; `column.filterable: false` отключает фильтр. Поиск регистронезависимый по подстроке, фильтры объединяются через И и применяются до сортировки. `column.filterAccessor` для нестроковых данных приводится к строке, `Date` — к ISO.
+- Фильтрация: `filterableColumns` включает строку фильтров под заголовком. Значение колонки берётся из `column.filterAccessor`, затем из `sortAccessor`, затем из `accessor`, если он возвращает примитив; `column.filterable: false` отключает фильтр. `column.filterType: 'select'` рендерит мультивыбор со списком уникальных значений из данных, пустые строки показываются как `(empty)`; `'text'` — поиск по подстроке. Поиск регистронезависимый, значения внутри одной колонки объединяются через ИЛИ, фильтры разных колонок — через И, фильтрация применяется до сортировки.
+- `ColumnFilters` хранит `string` для текстовых фильтров и `readonly string[]` для select-фильтров. Неконтролируемый режим работает без пропа `filters`: состояние хранится внутри, а `onFiltersChange` вызывается при изменении. `column.filterAccessor` для нестроковых данных приводится к строке, `Date` — к ISO.
+- Раскладка: таблица не выходит за контейнер, скроллится внутри `.pdg__scroll`; при `maxHeight` заголовок и строка фильтров закреплены сверху (`position: sticky`), текст в ячейках переносится на несколько строк.
 
 ## Testing
 
