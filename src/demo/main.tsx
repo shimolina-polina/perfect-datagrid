@@ -23,6 +23,7 @@ interface Employee {
   manager: string;
   status: 'Active' | 'On leave' | 'Contract';
   salary: number;
+  notes: string;
 }
 
 const firstNames = [
@@ -85,6 +86,13 @@ const locations = [
 ];
 const levels = ['L1', 'L2', 'L3', 'L4', 'L5', 'L6'];
 const statuses: Employee['status'][] = ['Active', 'Active', 'On leave', 'Contract'];
+const notes = [
+  'Leads the platform migration and reviews cross-team architecture proposals before every release.',
+  'Maintains the compiler pipeline and coordinates release readiness with the infrastructure group.',
+  'Owns the design system tokens and keeps the component library aligned with accessibility audits.',
+  'Runs quarterly reliability reviews and documents incident follow-ups for the on-call rotation.',
+  '',
+];
 
 const employees: Employee[] = Array.from({ length: 200 }, (_, index) => {
   const id = index + 1;
@@ -110,6 +118,7 @@ const employees: Employee[] = Array.from({ length: 200 }, (_, index) => {
     manager: `${managerFirst} ${managerLast}`,
     status: statuses[index % statuses.length],
     salary: 90000 + (index % 40) * 2500,
+    notes: notes[index % notes.length],
   };
 });
 
@@ -127,6 +136,7 @@ const columns: DataGridColumn<Employee>[] = [
     header: 'Role',
     accessor: (row) => row.role,
     sortAccessor: (row) => row.role,
+    filterType: 'select',
     width: 180,
   },
   {
@@ -134,6 +144,7 @@ const columns: DataGridColumn<Employee>[] = [
     header: 'Department',
     accessor: (row) => row.department,
     sortAccessor: (row) => row.department,
+    filterType: 'select',
     width: 180,
   },
   {
@@ -141,6 +152,7 @@ const columns: DataGridColumn<Employee>[] = [
     header: 'Location',
     accessor: (row) => row.location,
     sortAccessor: (row) => row.location,
+    filterType: 'select',
     width: 160,
   },
   {
@@ -148,6 +160,7 @@ const columns: DataGridColumn<Employee>[] = [
     header: 'Level',
     accessor: (row) => row.level,
     sortAccessor: (row) => row.level,
+    filterType: 'select',
     width: 110,
   },
   {
@@ -191,7 +204,16 @@ const columns: DataGridColumn<Employee>[] = [
     header: 'Status',
     accessor: (row) => row.status,
     sortAccessor: (row) => row.status,
+    filterType: 'select',
     width: 130,
+  },
+  {
+    id: 'notes',
+    header: 'Notes',
+    accessor: (row) => row.notes,
+    filterAccessor: (row) => row.notes,
+    filterType: 'select',
+    width: 280,
   },
   {
     id: 'salary',
@@ -215,7 +237,7 @@ function App() {
 
   const applyPreset = () => {
     setSort({ columnId: 'salary', direction: 'desc' });
-    setFilters({ department: 'Platform' });
+    setFilters({ department: ['Platform'], status: ['Active', 'Contract'] });
     setColumnPins({ status: 'left' });
     setColumnOrder(['status', 'role', 'name', 'department']);
   };
@@ -233,7 +255,7 @@ function App() {
         <p className="demo__eyebrow">perfect-datagrid</p>
         <h1 className="demo__title">A lightweight React data grid</h1>
         <p className="demo__subtitle">
-          200 rows and 12 columns with sortable, filterable, resizable, reorderable and pinnable
+          200 rows and 13 columns with sortable, filterable, resizable, reorderable and pinnable
           headers, multiple selection and zero runtime dependencies beyond React.
         </p>
       </header>
@@ -264,6 +286,7 @@ function App() {
         reorderableColumns
         filterableColumns
         selectionMode="multiple"
+        maxHeight={560}
         sort={sort}
         onSortChange={setSort}
         filters={filters}

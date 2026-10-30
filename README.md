@@ -37,11 +37,12 @@ The stylesheet is not injected automatically — import `perfect-datagrid/style.
 ## Features
 
 - **Sorting** — three states: `asc → desc → none`, driven by `column.sortAccessor`.
-- **Filtering** — a filter row under the header, case-insensitive substring matching, multiple filters combined with AND.
+- **Filtering** — a filter row under the header. Text filters match case-insensitive substrings; select filters show multi-select options collected from the data. Multiple filters are combined with AND.
 - **Column resizing** — drag the handle on the header edge; `table-layout` switches to fixed while resizing.
 - **Column reordering** — drag and drop or use the arrow keys on the column drag handle.
 - **Column pinning** — stick columns to the left or right edge with computed offsets.
 - **Row selection** — `none`, `single` or `multiple`, controlled or uncontrolled.
+- **Scrolling** — the grid stays inside its container, scrolls in both directions and keeps the header row visible.
 - **Accessibility** — semantic table markup, labelled controls, keyboard-operable headers.
 
 ## Props
@@ -65,6 +66,7 @@ The stylesheet is not injected automatically — import `perfect-datagrid/style.
 | `minColumnWidth` | `number` | `80` | Minimum width in pixels when resizing. |
 | `reorderableColumns` | `boolean` | `false` | Enable column reordering. |
 | `filterableColumns` | `boolean` | `false` | Show the filter row. |
+| `maxHeight` | `number \| string` | — | Maximum height of the scroll area; the header stays visible while scrolling. |
 | `sort` | `SortState \| null` | — | Controlled sorting. |
 | `defaultSort` | `SortState \| null` | `null` | Initial sorting for uncontrolled mode. |
 | `onSortChange` | `(sort) => void` | — | Called when sorting changes. |
@@ -88,8 +90,9 @@ Every setting supports both controlled and uncontrolled usage with the same `val
 | `header` | `ReactNode` | Header content. |
 | `accessor` | `(row) => ReactNode` | Cell content. |
 | `sortAccessor` | `(row) => string \| number \| Date \| null \| undefined` | Sortable value. Enables sorting when present. |
-| `filterAccessor` | `(row) => string \| number \| Date \| null \| undefined` | Filterable value. Falls back to `sortAccessor`. |
+| `filterAccessor` | `(row) => string \| number \| Date \| null \| undefined` | Filterable value. Falls back to `sortAccessor`, then to a primitive `accessor` result. |
 | `filterable` | `boolean` | Set to `false` to skip the column in filtering. |
+| `filterType` | `'text' \| 'select'` | Filter control. `'select'` renders a multi-select dropdown whose options are collected from the data. Defaults to `'text'`. |
 | `width` | `number \| string` | Column width, also used as a fallback for pin offsets. |
 | `align` | `'left' \| 'center' \| 'right'` | Cell alignment. |
 | `resizable` | `boolean` | Set to `false` to disable resizing for the column. |
@@ -97,11 +100,30 @@ Every setting supports both controlled and uncontrolled usage with the same `val
 
 Reordering is only allowed within a group of columns that share the same `pin`.
 
+## Filtering
+
+`filterableColumns` adds a filter row under the header. Each column filters on `filterAccessor`, falling back to `sortAccessor` and then to `accessor` when it returns a primitive value.
+
+```tsx
+const columns: DataGridColumn<Employee>[] = [
+  { id: 'name', header: 'Name', accessor: (row) => row.name },
+  { id: 'department', header: 'Department', accessor: (row) => row.department, filterType: 'select' },
+];
+```
+
+- A `filterType: 'select'` column renders a dropdown with a checkbox per unique value taken from the rows; empty strings are offered as `(empty)`. Values within one column are combined with OR, different columns with AND.
+- `filters` values are `string` for text columns and `readonly string[]` for select columns: `{ department: ['Platform', 'Kernel'], name: 'ada' }`.
+- Filters work without passing `filters`; the grid keeps them internally and only calls `onFiltersChange`. Pass `filters` together with `onFiltersChange` to control them from outside.
+
+## Scrolling and layout
+
+The grid never grows past its container. Set `maxHeight` to make the body scroll while the header row, including the filter row, stays pinned at the top. Cell content wraps onto multiple lines instead of being clipped.
+
 ## Controlled settings example
 
 ```tsx
 const [sort, setSort] = useState<SortState | null>({ columnId: 'salary', direction: 'desc' });
-const [filters, setFilters] = useState<ColumnFilters>({ department: 'Platform' });
+const [filters, setFilters] = useState<ColumnFilters>({ department: ['Platform', 'Kernel'] });
 const [columnOrder, setColumnOrder] = useState<string[]>(defaultOrder);
 const [columnPins, setColumnPins] = useState<ColumnPins>({ status: 'left' });
 

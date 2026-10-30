@@ -1,6 +1,8 @@
 export { DataGrid } from './components/DataGrid';
 export type {
   ColumnFilters,
+  ColumnFilterType,
+  ColumnFilterValue,
   ColumnPin,
   ColumnPins,
   DataGridColumn,

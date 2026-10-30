@@ -1,9 +1,17 @@
 import { ColumnDragHandle } from './ColumnDragHandle';
+import { ColumnFilterSelect } from './ColumnFilterSelect';
 import { ColumnMenu } from './ColumnMenu';
 import { ColumnResizeHandle } from './ColumnResizeHandle';
 import { SelectionCheckbox } from '../shared/SelectionCheckbox';
-import type { DataGridColumn, PinnedOffsets, SelectionMode, SortState } from '../types';
-import { SELECTION_COLUMN_ID } from '../lib/utils';
+import type {
+  ColumnFilters,
+  ColumnFilterValue,
+  DataGridColumn,
+  PinnedOffsets,
+  SelectionMode,
+  SortState,
+} from '../types';
+import { normalizeFilterValues, SELECTION_COLUMN_ID } from '../lib/utils';
 
 interface DataGridHeaderProps<T> {
   columns: ReadonlyArray<DataGridColumn<T>>;
@@ -14,7 +22,10 @@ interface DataGridHeaderProps<T> {
   resizableColumns: boolean;
   reorderableColumns: boolean;
   filterableColumns: boolean;
-  filters: Readonly<Record<string, string>>;
+  filterableColumnIds: ReadonlySet<string>;
+  filterOptions: Readonly<Record<string, readonly string[]>>;
+  filters: Readonly<ColumnFilters>;
+  filterRowOffset: number;
   minColumnWidth: number;
   draggedColumnId: string | null;
   dragOverColumnId: string | null;
@@ -30,7 +41,7 @@ interface DataGridHeaderProps<T> {
   onColumnDrop: (columnId: string) => void;
   onMoveColumn: (columnId: string, offset: number) => void;
   onTogglePin: (columnId: string) => void;
-  onFilterChange: (columnId: string, value: string) => void;
+  onFilterChange: (columnId: string, value: ColumnFilterValue) => void;
 }
 
 export function DataGridHeader<T>({
@@ -42,7 +53,10 @@ export function DataGridHeader<T>({
   resizableColumns,
   reorderableColumns,
   filterableColumns,
+  filterableColumnIds,
+  filterOptions,
   filters,
+  filterRowOffset,
   minColumnWidth,
   draggedColumnId,
   dragOverColumnId,
@@ -60,12 +74,7 @@ export function DataGridHeader<T>({
   onTogglePin,
   onFilterChange,
 }: DataGridHeaderProps<T>) {
-  const showFilterRow =
-    filterableColumns &&
-    columns.some(
-      (column) =>
-        column.filterable !== false && Boolean(column.filterAccessor ?? column.sortAccessor),
-    );
+  const showFilterRow = filterableColumns && filterableColumnIds.size > 0;
 
   return (
     <thead>
@@ -201,14 +210,14 @@ export function DataGridHeader<T>({
             <th
               scope="col"
               className="pdg__filter-cell pdg__filter-cell--pinned pdg__filter-cell--pinned-left"
-              style={{ left: 0 }}
+              style={{ left: 0, top: filterRowOffset }}
             />
           ) : null}
           {columns.map((column) => {
             const pinOffset = pinnedOffsets[column.id];
-            const isFilterable =
-              column.filterable !== false &&
-              Boolean(column.filterAccessor ?? column.sortAccessor);
+            const isFilterable = filterableColumnIds.has(column.id);
+            const rawValue = filters[column.id];
+            const textValue = typeof rawValue === 'string' ? rawValue : '';
             const filterCellClassName = [
               'pdg__filter-cell',
               column.pin && 'pdg__filter-cell--pinned',
@@ -229,17 +238,26 @@ export function DataGridHeader<T>({
                 scope="col"
                 data-column-id={column.id}
                 className={filterCellClassName}
-                style={filterPinStyle}
+                style={{ ...filterPinStyle, top: filterRowOffset }}
               >
                 {isFilterable ? (
-                  <input
-                    type="search"
-                    className="pdg__filter-input"
-                    aria-label={`Filter ${column.id} column`}
-                    placeholder="Filter"
-                    value={filters[column.id] ?? ''}
-                    onChange={(event) => onFilterChange(column.id, event.target.value)}
-                  />
+                  column.filterType === 'select' ? (
+                    <ColumnFilterSelect
+                      columnId={column.id}
+                      options={filterOptions[column.id] ?? []}
+                      value={normalizeFilterValues(rawValue)}
+                      onChange={(values) => onFilterChange(column.id, values)}
+                    />
+                  ) : (
+                    <input
+                      type="search"
+                      className="pdg__filter-input"
+                      aria-label={`Filter ${column.id} column`}
+                      placeholder="Filter"
+                      value={textValue}
+                      onChange={(event) => onFilterChange(column.id, event.target.value)}
+                    />
+                  )
                 ) : null}
               </th>
             );
