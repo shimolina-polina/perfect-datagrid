@@ -276,27 +276,28 @@ function App() {
         {columnOrder.length > 4 ? '…' : ''}
       </p>
 
-      <DataGrid
-        rows={employees}
-        columns={columns}
-        getRowId={(row) => row.id}
-        caption="Engineering team"
-        striped
-        resizableColumns
-        reorderableColumns
-        filterableColumns
-        selectionMode="multiple"
-        maxHeight={560}
-        sort={sort}
-        onSortChange={setSort}
-        filters={filters}
-        onFiltersChange={setFilters}
-        columnOrder={columnOrder}
-        onColumnOrderChange={setColumnOrder}
-        columnPins={columnPins}
-        onColumnPinsChange={setColumnPins}
-        onSelectionChange={(_ids, selectedRows) => setSelectedRows(selectedRows)}
-      />
+      <div className="demo__grid">
+        <DataGrid
+          rows={employees}
+          columns={columns}
+          getRowId={(row) => row.id}
+          caption="Engineering team"
+          striped
+          resizableColumns
+          reorderableColumns
+          filterableColumns
+          selectionMode="multiple"
+          sort={sort}
+          onSortChange={setSort}
+          filters={filters}
+          onFiltersChange={setFilters}
+          columnOrder={columnOrder}
+          onColumnOrderChange={setColumnOrder}
+          columnPins={columnPins}
+          onColumnPinsChange={setColumnPins}
+          onSelectionChange={(_ids, selectedRows) => setSelectedRows(selectedRows)}
+        />
+      </div>
 
       <p className="demo__selection">
         {selectedRows.length === 0

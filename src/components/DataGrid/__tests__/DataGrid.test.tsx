@@ -353,6 +353,19 @@ describe('DataGrid', () => {
     expect(screen.getByRole('table', { name: 'Engineering team' })).toBeInTheDocument();
   });
 
+  it('keeps the scroll area inside the frame and applies maxHeight to it', () => {
+    const { container } = render(
+      <DataGrid rows={rows} columns={columns} getRowId={(row) => row.id} maxHeight={320} />,
+    );
+
+    const frame = container.querySelector('.pdg__frame');
+    const scroll = container.querySelector<HTMLElement>('.pdg__scroll');
+
+    expect(frame?.parentElement).toHaveClass('pdg');
+    expect(scroll?.parentElement).toBe(frame);
+    expect(scroll?.style.maxHeight).toBe('320px');
+  });
+
   it('groups pinned columns at the edges', () => {
     const pinnedColumns: DataGridColumn<Row>[] = [
       { ...columns[1], pin: 'right' },

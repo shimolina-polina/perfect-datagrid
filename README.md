@@ -128,7 +128,13 @@ const columns: DataGridColumn<Employee>[] = [
 
 ## Scrolling and layout
 
-The grid never grows past its container. Set `maxHeight` to make the body scroll while the header row, including the filter row, stays pinned at the top. Cell content wraps onto multiple lines instead of being clipped.
+The grid never grows past its container. When the parent has a definite height, the grid shrinks to it and scrolls inside the `.pdg__scroll` area; the header row, including the filter row, stays pinned at the top. Set `maxHeight` to cap the grid explicitly without constraining the parent. Cell content wraps onto multiple lines instead of being clipped.
+
+```tsx
+<div style={{ display: 'flex', flexDirection: 'column', height: 520 }}>
+  <DataGrid rows={rows} columns={columns} />
+</div>
+```
 
 ## Controlled settings example
 
