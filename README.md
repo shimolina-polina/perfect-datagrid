@@ -63,7 +63,7 @@ That is only necessary when inline styles are blocked by a strict `style-src` po
 | --- | --- | --- | --- |
 | `rows` | `readonly T[]` | — | Row data. |
 | `columns` | `ReadonlyArray<DataGridColumn<T>>` | — | Column configuration. |
-| `getRowId` | `(row, index) => string \| number` | row index | Stable row identity. Required for selection to survive sorting and filtering. |
+| `getRowId` | `(row, index) => string \| number` | row index | Stable row identity. Required for selection to survive sorting, filtering and pagination. |
 | `emptyMessage` | `ReactNode` | `'No data'` | Content rendered when there are no rows. |
 | `caption` | `ReactNode` | — | Table caption. |
 | `className` | `string` | — | Extra class name for the root element. |
@@ -85,8 +85,8 @@ That is only necessary when inline styles are blocked by a strict `style-src` po
 | `sort` | `SortState \| null` | — | Controlled sorting. |
 | `defaultSort` | `SortState \| null` | `null` | Initial sorting for uncontrolled mode. |
 | `onSortChange` | `(sort) => void` | — | Called when sorting changes. |
-| `filters` | `Readonly<Record<string, string>>` | — | Controlled filters. |
-| `defaultFilters` | `Readonly<Record<string, string>>` | `{}` | Initial filters for uncontrolled mode. |
+| `filters` | `Readonly<ColumnFilters>` | — | Controlled filters. Values are `string` for text columns and `readonly string[]` for select columns. |
+| `defaultFilters` | `Readonly<ColumnFilters>` | `{}` | Initial filters for uncontrolled mode. |
 | `onFiltersChange` | `(filters) => void` | — | Called when filters change. |
 | `columnOrder` | `ReadonlyArray<string>` | — | Controlled column order by id. |
 | `defaultColumnOrder` | `ReadonlyArray<string>` | column order | Initial order for uncontrolled mode. |
