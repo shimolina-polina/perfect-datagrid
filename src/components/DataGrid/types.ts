@@ -9,6 +9,11 @@ export type ColumnFilterValue = string | readonly string[];
 export type ColumnFilters = Record<string, ColumnFilterValue>;
 export type ColumnPins = Record<string, ColumnPin | null>;
 
+export interface PaginationModel {
+  page: number;
+  pageSize: number;
+}
+
 export interface DataGridColumn<T> {
   id: string;
   header: ReactNode;
@@ -42,6 +47,9 @@ export interface DataGridProps<T> {
   reorderableColumns?: boolean;
   filterableColumns?: boolean;
   maxHeight?: number | string;
+  paginationModel?: PaginationModel;
+  defaultPaginationModel?: PaginationModel;
+  onPaginationModelChange?: (model: PaginationModel) => void;
   sort?: SortState | null;
   defaultSort?: SortState | null;
   onSortChange?: (sort: SortState | null) => void;

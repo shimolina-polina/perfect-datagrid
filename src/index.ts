@@ -7,6 +7,7 @@ export type {
   ColumnPins,
   DataGridColumn,
   DataGridProps,
+  PaginationModel,
   RowId,
   SelectionMode,
   SortDirection,

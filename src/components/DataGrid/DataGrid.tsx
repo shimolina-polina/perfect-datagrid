@@ -1,5 +1,6 @@
 import { useCallback, useId, useMemo, useState } from 'react';
 import { DataGridBody } from './body/DataGridBody';
+import { DataGridFooter } from './footer/DataGridFooter';
 import { DataGridHeader } from './header/DataGridHeader';
 import type {
   ColumnFilters,
@@ -8,6 +9,7 @@ import type {
   ColumnPins,
   DataGridColumn,
   DataGridProps,
+  PaginationModel,
   PinnedOffsets,
   RowId,
   SortState,
@@ -47,6 +49,9 @@ export function DataGrid<T>({
   reorderableColumns = false,
   filterableColumns = false,
   maxHeight,
+  paginationModel: controlledPaginationModel,
+  defaultPaginationModel,
+  onPaginationModelChange,
   sort: controlledSort,
   defaultSort,
   onSortChange,
@@ -75,6 +80,9 @@ export function DataGrid<T>({
   const [internalColumnPins, setInternalColumnPins] = useState<
     Record<string, ColumnPin | null>
   >(() => ({ ...(defaultColumnPins ?? {}) }));
+  const [internalPaginationModel, setInternalPaginationModel] = useState<PaginationModel | null>(
+    () => (defaultPaginationModel ? { ...defaultPaginationModel } : null),
+  );
   const [draggedColumnId, setDraggedColumnId] = useState<string | null>(null);
   const [dragOverColumnId, setDragOverColumnId] = useState<string | null>(null);
 
@@ -237,6 +245,22 @@ export function DataGrid<T>({
     sort,
   ]);
 
+  const activePaginationModel = controlledPaginationModel ?? internalPaginationModel;
+  const paginationEnabled = activePaginationModel !== null;
+  const pageSize = activePaginationModel
+    ? Math.max(1, Math.floor(activePaginationModel.pageSize))
+    : 1;
+  const pageCount = paginationEnabled
+    ? Math.max(1, Math.ceil(sortedRows.length / pageSize))
+    : 1;
+  const page = activePaginationModel
+    ? Math.min(Math.max(0, Math.floor(activePaginationModel.page)), pageCount - 1)
+    : 0;
+  const pageStart = page * pageSize;
+  const visibleRows = paginationEnabled
+    ? sortedRows.slice(pageStart, pageStart + pageSize)
+    : sortedRows;
+
   const isRowSelected = (row: T, index: number) =>
     Boolean(isExternallySelected?.(row, index)) ||
     selectedIdSet.has(resolveRowId(row, index));
@@ -272,20 +296,35 @@ export function DataGrid<T>({
     );
   };
 
-  const allSelected =
-    sortedRows.length > 0 &&
-    sortedRows.every((row, index) => selectedIdSet.has(resolveRowId(row, index)));
-  const someSelected =
-    !allSelected &&
-    sortedRows.some((row, index) => selectedIdSet.has(resolveRowId(row, index)));
+  const pageRowIds = visibleRows.map((row, index) => resolveRowId(row, pageStart + index));
+  const allSelected = pageRowIds.length > 0 && pageRowIds.every((id) => selectedIdSet.has(id));
+  const someSelected = !allSelected && pageRowIds.some((id) => selectedIdSet.has(id));
 
   const toggleAll = () => {
     if (selectionMode !== 'multiple') return;
 
+    const pageIdSet = new Set(pageRowIds);
     updateSelection(
-      allSelected ? [] : sortedRows.map((row, index) => resolveRowId(row, index)),
+      allSelected
+        ? selectedIds.filter((id) => !pageIdSet.has(id))
+        : [...new Set([...selectedIds, ...pageRowIds])],
     );
   };
+
+  const updatePagination = useCallback(
+    (nextPage: number) => {
+      const nextModel: PaginationModel = {
+        page: Math.max(0, Math.floor(nextPage)),
+        pageSize,
+      };
+
+      if (controlledPaginationModel === undefined) {
+        setInternalPaginationModel(nextModel);
+      }
+      onPaginationModelChange?.(nextModel);
+    },
+    [controlledPaginationModel, onPaginationModelChange, pageSize],
+  );
 
   const resizeColumn = useCallback((columnId: string, width: number) => {
     setColumnWidths((current) =>
@@ -515,18 +554,28 @@ export function DataGrid<T>({
               onFilterChange={updateFilter}
             />
             <DataGridBody
-              rows={sortedRows}
+              rows={visibleRows}
               columns={displayColumns}
               getRowId={getRowId}
               emptyMessage={emptyMessage}
               selectionMode={selectionMode}
               isRowSelected={isRowSelected}
               columnOffsets={pinnedOffsets}
+              rowIndexOffset={pageStart}
               onToggleSelect={toggleRow}
               onRowClick={onRowClick}
             />
           </table>
         </div>
+        {paginationEnabled ? (
+          <DataGridFooter
+            page={page}
+            pageCount={pageCount}
+            pageSize={pageSize}
+            totalRows={sortedRows.length}
+            onPageChange={updatePagination}
+          />
+        ) : null}
       </div>
     </div>
   );
