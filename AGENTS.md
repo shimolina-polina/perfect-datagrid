@@ -66,6 +66,8 @@ src/
       body/                           всё, что рендерится в tbody
         DataGridBody.tsx
         DataGridRow.tsx
+      footer/                         всё, что рендерится под таблицей
+        DataGridFooter.tsx
       shared/                         переиспользуемые UI-примитивы
         SelectionCheckbox.tsx
       hooks/                          stateful React-логика без JSX
@@ -85,12 +87,13 @@ src/
 - В корне `components/DataGrid/` живут только `index.ts`, `DataGrid.tsx`, `types.ts` и `DataGrid.css`. Новые компоненты, хуки и утилиты сюда не добавлять.
 - `header/` — компоненты и обработчики, которые рендерятся только внутри `<thead>`.
 - `body/` — компоненты строк, ячеек и empty state для `<tbody>`.
+- `footer/` — компоненты футера, которые рендерятся под таблицей внутри `.pdg__frame`.
 - `shared/` — самостоятельные UI-примитивы, используемые минимум в двух областях (`header` и `body`). Если компонент нужен только одному разделу, он остаётся в этом разделе.
 - `hooks/` — хуки с состоянием или эффектами. Файлы называются `use*.ts` и не содержат JSX.
 - `lib/` — чистые функции без React, DOM и побочных эффектов. Имена файлов в camelCase.
 - `__tests__/` — тесты публичного поведения компонента. Внутренние файлы не тестируются напрямую, если это не чистая функция из `lib/`.
 - Компоненты называются в PascalCase, папки — в нижнем регистре, кроме `__tests__`.
-- Импорты идут только вниз по зависимостям: `DataGrid.tsx` → `header` / `body` / `hooks` / `lib`; `header` и `body` → `shared` / `lib` / `types`; `shared` и `lib` не импортируют `header` или `body`. Циклические импорты запрещены.
+- Импорты идут только вниз по зависимостям: `DataGrid.tsx` → `header` / `body` / `footer` / `hooks` / `lib`; `header` и `body` → `shared` / `lib` / `types`; `shared` и `lib` не импортируют `header`, `body` или `footer`. Циклические импорты запрещены.
 - Новый файл кладётся по ответственности. Если не подходит ни одна папка, сначала обсуждается новая категория, а не добавление файла в корень.
 
 ## Architecture Rules
@@ -108,7 +111,8 @@ src/
 
 ## Component Behavior
 
-- Внешнее управление настройками: `sort` / `defaultSort` / `onSortChange`, `filters` / `defaultFilters` / `onFiltersChange`, `columnOrder` / `defaultColumnOrder` / `onColumnOrderChange`, `columnPins` / `defaultColumnPins` / `onColumnPinsChange`.
+- Внешнее управление настройками: `sort` / `defaultSort` / `onSortChange`, `filters` / `defaultFilters` / `onFiltersChange`, `columnOrder` / `defaultColumnOrder` / `onColumnOrderChange`, `columnPins` / `defaultColumnPins` / `onColumnPinsChange`, `paginationModel` / `defaultPaginationModel` / `onPaginationModelChange`.
+- Пагинация: `PaginationModel` — `{ page, pageSize }`, `page` с нуля, `pageSize` не меньше 1. Футер рендерится только если передан `paginationModel` или `defaultPaginationModel`; страница применяется после фильтрации и сортировки. Индексы строк остаются глобальными по обработанному списку, чтобы `getRowId`, `onRowClick` и `isRowSelected` работали одинаково на всех страницах.
 - Сортировка: `sortAccessor` опционален, состояния `asc -> desc -> none`.
 - Выбор: `selectionMode: 'none' | 'single' | 'multiple'`.
   - Controlled: `selectedRowIds`; uncontrolled: `defaultSelectedRowIds`.

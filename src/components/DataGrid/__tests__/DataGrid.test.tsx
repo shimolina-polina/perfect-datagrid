@@ -259,6 +259,186 @@ describe('DataGrid', () => {
     });
   });
 
+  it('renders the footer only when a pagination model is provided', () => {
+    const { rerender } = render(
+      <DataGrid rows={rows} columns={columns} getRowId={(row) => row.id} />,
+    );
+
+    expect(screen.queryByRole('button', { name: 'Next page' })).not.toBeInTheDocument();
+
+    rerender(
+      <DataGrid
+        rows={rows}
+        columns={columns}
+        getRowId={(row) => row.id}
+        paginationModel={{ page: 0, pageSize: 2 }}
+      />,
+    );
+
+    expect(screen.getByRole('button', { name: 'Next page' })).toBeInTheDocument();
+  });
+
+  it('pages rows with an uncontrolled pagination model', () => {
+    render(
+      <DataGrid
+        rows={rows}
+        columns={columns}
+        getRowId={(row) => row.id}
+        defaultPaginationModel={{ page: 0, pageSize: 2 }}
+      />,
+    );
+
+    expect(dataValues(0)).toEqual(['Beta', 'Alpha']);
+    expect(screen.getByText('1–2 of 3')).toBeInTheDocument();
+    expect(screen.getByText('Page 1 of 2')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Next page' }));
+
+    expect(dataValues(0)).toEqual(['Gamma']);
+    expect(screen.getByText('3–3 of 3')).toBeInTheDocument();
+    expect(screen.getByText('Page 2 of 2')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Next page' })).toBeDisabled();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Previous page' }));
+
+    expect(dataValues(0)).toEqual(['Beta', 'Alpha']);
+    expect(screen.getByRole('button', { name: 'Previous page' })).toBeDisabled();
+  });
+
+  it('supports a controlled pagination model', () => {
+    const onPaginationModelChange = vi.fn();
+    const paginationModel = { page: 0, pageSize: 2 };
+    const { rerender } = render(
+      <DataGrid
+        rows={rows}
+        columns={columns}
+        getRowId={(row) => row.id}
+        paginationModel={paginationModel}
+        onPaginationModelChange={onPaginationModelChange}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Next page' }));
+
+    expect(onPaginationModelChange).toHaveBeenCalledWith({ page: 1, pageSize: 2 });
+    expect(dataValues(0)).toEqual(['Beta', 'Alpha']);
+
+    rerender(
+      <DataGrid
+        rows={rows}
+        columns={columns}
+        getRowId={(row) => row.id}
+        paginationModel={{ page: 1, pageSize: 2 }}
+        onPaginationModelChange={onPaginationModelChange}
+      />,
+    );
+
+    expect(dataValues(0)).toEqual(['Gamma']);
+    expect(screen.getByText('Page 2 of 2')).toBeInTheDocument();
+  });
+
+  it('paginates after sorting', () => {
+    render(
+      <DataGrid
+        rows={rows}
+        columns={columns}
+        getRowId={(row) => row.id}
+        defaultSort={{ columnId: 'name', direction: 'asc' }}
+        defaultPaginationModel={{ page: 0, pageSize: 2 }}
+      />,
+    );
+
+    expect(dataValues(0)).toEqual(['Alpha', 'Beta']);
+    expect(screen.getByText('1–2 of 3')).toBeInTheDocument();
+  });
+
+  it('clamps the current page when filters reduce the row count', () => {
+    render(
+      <DataGrid
+        rows={rows}
+        columns={columns}
+        getRowId={(row) => row.id}
+        filterableColumns
+        defaultPaginationModel={{ page: 0, pageSize: 2 }}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Next page' }));
+    expect(dataValues(0)).toEqual(['Gamma']);
+
+    fireEvent.change(screen.getByRole('searchbox', { name: 'Filter name column' }), {
+      target: { value: 'bet' },
+    });
+
+    expect(dataValues(0)).toEqual(['Beta']);
+    expect(screen.getByText('1–1 of 1')).toBeInTheDocument();
+    expect(screen.getByText('Page 1 of 1')).toBeInTheDocument();
+  });
+
+  it('selects only the current page from the header checkbox', () => {
+    render(
+      <DataGrid
+        rows={rows}
+        columns={columns}
+        getRowId={(row) => row.id}
+        selectionMode="multiple"
+        defaultPaginationModel={{ page: 0, pageSize: 2 }}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Select all rows' }));
+
+    expect(screen.getByText('Beta').closest('tr')).toHaveClass('pdg__row--selected');
+    expect(screen.getByText('Alpha').closest('tr')).toHaveClass('pdg__row--selected');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Next page' }));
+
+    expect(screen.getByText('Gamma').closest('tr')).not.toHaveClass('pdg__row--selected');
+    expect(screen.getByRole('checkbox', { name: 'Select all rows' })).not.toBeChecked();
+
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Select all rows' }));
+    expect(screen.getByText('Gamma').closest('tr')).toHaveClass('pdg__row--selected');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Previous page' }));
+
+    expect(screen.getByText('Beta').closest('tr')).toHaveClass('pdg__row--selected');
+    expect(screen.getByText('Alpha').closest('tr')).toHaveClass('pdg__row--selected');
+  });
+
+  it('keeps row indexes global across pages', () => {
+    const onRowClick = vi.fn();
+
+    render(
+      <DataGrid
+        rows={rows}
+        columns={columns}
+        getRowId={(row) => row.id}
+        defaultPaginationModel={{ page: 0, pageSize: 2 }}
+        onRowClick={onRowClick}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Next page' }));
+    fireEvent.click(screen.getByText('Gamma'));
+
+    expect(onRowClick).toHaveBeenCalledWith(rows[2], 2);
+  });
+
+  it('renders a disabled footer for empty data', () => {
+    render(
+      <DataGrid
+        rows={[]}
+        columns={columns}
+        defaultPaginationModel={{ page: 0, pageSize: 2 }}
+      />,
+    );
+
+    expect(screen.getByText('No rows')).toBeInTheDocument();
+    expect(screen.getByText('Page 1 of 1')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Previous page' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Next page' })).toBeDisabled();
+  });
+
   it('renders column resize handles only when enabled', () => {
     const { rerender } = render(
       <DataGrid rows={rows} columns={columns} getRowId={(row) => row.id} />,

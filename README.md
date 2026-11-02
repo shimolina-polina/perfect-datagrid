@@ -54,6 +54,7 @@ That is only necessary when inline styles are blocked by a strict `style-src` po
 - **Column pinning** — stick columns to the left or right edge with computed offsets.
 - **Row selection** — `none`, `single` or `multiple`, controlled or uncontrolled.
 - **Scrolling** — the grid stays inside its container, scrolls in both directions and keeps the header row visible.
+- **Pagination** — an opt-in footer with previous/next controls, driven by a controlled or uncontrolled pagination model.
 - **Accessibility** — semantic table markup, labelled controls, keyboard-operable headers.
 
 ## Props
@@ -78,6 +79,9 @@ That is only necessary when inline styles are blocked by a strict `style-src` po
 | `reorderableColumns` | `boolean` | `false` | Enable column reordering. |
 | `filterableColumns` | `boolean` | `false` | Show the filter row. |
 | `maxHeight` | `number \| string` | — | Maximum height of the scroll area; the header stays visible while scrolling. |
+| `paginationModel` | `{ page: number; pageSize: number }` | — | Controlled pagination. The footer appears when this or `defaultPaginationModel` is set. `page` is zero-based. |
+| `defaultPaginationModel` | `{ page: number; pageSize: number }` | — | Initial pagination for uncontrolled mode. |
+| `onPaginationModelChange` | `(model) => void` | — | Called when the page changes. |
 | `sort` | `SortState \| null` | — | Controlled sorting. |
 | `defaultSort` | `SortState \| null` | `null` | Initial sorting for uncontrolled mode. |
 | `onSortChange` | `(sort) => void` | — | Called when sorting changes. |
@@ -135,6 +139,26 @@ The grid never grows past its container. When the parent has a definite height, 
   <DataGrid rows={rows} columns={columns} />
 </div>
 ```
+
+## Pagination
+
+Pagination is opt-in: the footer is rendered only when `paginationModel` or `defaultPaginationModel` is passed. `page` is zero-based and `pageSize` must be at least 1. Filtering and sorting are applied before rows are split into pages, and row indexes passed to `getRowId`, `onRowClick` and `isRowSelected` stay stable across pages.
+
+```tsx
+const [paginationModel, setPaginationModel] = useState<PaginationModel>({
+  page: 0,
+  pageSize: 25,
+});
+
+<DataGrid
+  rows={rows}
+  columns={columns}
+  paginationModel={paginationModel}
+  onPaginationModelChange={setPaginationModel}
+/>
+```
+
+Use `defaultPaginationModel` instead for uncontrolled pagination. The footer shows the visible row range, the current page and previous/next buttons.
 
 ## Controlled settings example
 

@@ -5,6 +5,7 @@ import {
   type ColumnFilters,
   type ColumnPins,
   type DataGridColumn,
+  type PaginationModel,
   type SortState,
 } from '../index';
 import './demo.css';
@@ -227,6 +228,7 @@ const columns: DataGridColumn<Employee>[] = [
 ];
 
 const defaultColumnOrder = columns.map((column) => column.id);
+const defaultPaginationModel: PaginationModel = { page: 0, pageSize: 25 };
 
 function App() {
   const [selectedRows, setSelectedRows] = useState<Employee[]>([]);
@@ -234,12 +236,14 @@ function App() {
   const [filters, setFilters] = useState<ColumnFilters>({});
   const [columnOrder, setColumnOrder] = useState<string[]>(defaultColumnOrder);
   const [columnPins, setColumnPins] = useState<ColumnPins>({});
+  const [paginationModel, setPaginationModel] = useState<PaginationModel>(defaultPaginationModel);
 
   const applyPreset = () => {
     setSort({ columnId: 'salary', direction: 'desc' });
     setFilters({ department: ['Platform'], status: ['Active', 'Contract'] });
     setColumnPins({ status: 'left' });
     setColumnOrder(['status', 'role', 'name', 'department']);
+    setPaginationModel((current) => ({ ...current, page: 0 }));
   };
 
   const resetSettings = () => {
@@ -247,6 +251,7 @@ function App() {
     setFilters({});
     setColumnPins({});
     setColumnOrder(defaultColumnOrder);
+    setPaginationModel(defaultPaginationModel);
   };
 
   return (
@@ -273,7 +278,7 @@ function App() {
         Sort: {sort ? `${sort.columnId} ${sort.direction}` : 'none'} · Filters:{' '}
         {Object.keys(filters).length} · Pins: {Object.keys(columnPins).length} · Order:{' '}
         {columnOrder.slice(0, 4).join(', ')}
-        {columnOrder.length > 4 ? '…' : ''}
+        {columnOrder.length > 4 ? '…' : ''} · Page: {paginationModel.page + 1}
       </p>
 
       <div className="demo__grid">
@@ -287,6 +292,8 @@ function App() {
           reorderableColumns
           filterableColumns
           selectionMode="multiple"
+          paginationModel={paginationModel}
+          onPaginationModelChange={setPaginationModel}
           sort={sort}
           onSortChange={setSort}
           filters={filters}

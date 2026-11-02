@@ -10,6 +10,7 @@ interface DataGridBodyProps<T> {
   selectionMode: SelectionMode;
   isRowSelected: (row: T, index: number) => boolean;
   columnOffsets: PinnedOffsets;
+  rowIndexOffset: number;
   onToggleSelect: (row: T, index: number) => void;
   onRowClick?: (row: T, index: number) => void;
 }
@@ -22,6 +23,7 @@ export function DataGridBody<T>({
   selectionMode,
   isRowSelected,
   columnOffsets,
+  rowIndexOffset,
   onToggleSelect,
   onRowClick,
 }: DataGridBodyProps<T>) {
@@ -36,19 +38,23 @@ export function DataGridBody<T>({
           </td>
         </tr>
       ) : (
-        rows.map((row, index) => (
-          <DataGridRow
-            key={getRowId ? getRowId(row, index) : index}
-            row={row}
-            rowIndex={index}
-            columns={columns}
-            selected={isRowSelected(row, index)}
-            selectionMode={selectionMode}
-            columnOffsets={columnOffsets}
-            onToggleSelect={onToggleSelect}
-            onRowClick={onRowClick}
-          />
-        ))
+        rows.map((row, index) => {
+          const rowIndex = rowIndexOffset + index;
+
+          return (
+            <DataGridRow
+              key={getRowId ? getRowId(row, rowIndex) : rowIndex}
+              row={row}
+              rowIndex={rowIndex}
+              columns={columns}
+              selected={isRowSelected(row, rowIndex)}
+              selectionMode={selectionMode}
+              columnOffsets={columnOffsets}
+              onToggleSelect={onToggleSelect}
+              onRowClick={onRowClick}
+            />
+          );
+        })
       )}
     </tbody>
   );
